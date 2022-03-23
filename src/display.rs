@@ -38,7 +38,7 @@ impl Default for ScreenCell {
 }
 
 impl ScreenCell {
-    fn new(c: char, colour: Colour) -> Self {
+    pub fn new(c: char, colour: Colour) -> Self {
         Self { c, colour }
     }
 }
@@ -69,9 +69,9 @@ impl ScreenBuffer {
         }
     }
 
-    pub fn write_string(&mut self, x: usize, y: usize, content: &str) {
+    pub fn write_string(&mut self, x: usize, y: usize, content: &str, colour: Colour) {
         for (i, c) in content.chars().enumerate() {
-            self.write(x + i, y, ScreenCell::new(c, Colour::White));
+            self.write(x + i, y, ScreenCell::new(c, colour));
         }
     }
 
