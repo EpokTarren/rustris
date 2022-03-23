@@ -45,7 +45,7 @@ impl ScreenCell {
 
 impl Display for ScreenCell {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.c)
+        write!(f, "\x1b[38;5;{}m{}\x1b[0m", self.colour as u8, self.c)
     }
 }
 
@@ -86,8 +86,8 @@ impl ScreenBuffer {
     pub fn print(self) {
         print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
 
-        for x in 0..BUFFER_WIDTH {
-            for y in 0..BUFFER_HEIGHT {
+        for y in 0..BUFFER_HEIGHT {
+            for x in 0..BUFFER_WIDTH {
                 print!("{}", self.buffer[x + y * BUFFER_WIDTH]);
             }
             print!("\n")
