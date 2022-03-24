@@ -73,4 +73,10 @@ impl Config {
             Default::default()
         }
     }
+
+    pub const PATH: &'static str = if cfg!(windows) {
+        "%USERPROFILE%\\.rustris\\config"
+    } else {
+        "~/.rustris/config"
+    };
 }

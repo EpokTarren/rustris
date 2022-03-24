@@ -1,5 +1,6 @@
 use crate::{
     board::{Board, Input, InputDirection, InputRotation},
+    config::Config,
     display::ScreenBuffer,
 };
 
@@ -12,20 +13,52 @@ mod piece;
 mod point;
 
 fn main() {
-    let mut buf: ScreenBuffer = Default::default();
-
     let mut board: Board = Default::default();
 
-    let input = Input {
-        direction: InputDirection::Left,
-        hard_drop: true,
-        rotation: InputRotation::Quarter,
-        soft_drop: true,
-    };
+    let conf = Config::from_file(Config::PATH);
 
-    board.tick(input);
+    loop {
+        if let Some(c) = get_key::get_key() {
+            let mut buf: ScreenBuffer = Default::default();
 
-    buf.join(board.to_screen_buffer());
+            let mut input = Input {
+                direction: InputDirection::None,
+                hard_drop: false,
+                rotation: InputRotation::None,
+                soft_drop: false,
+            };
 
-    buf.print();
+            let c = c.to_ascii_lowercase();
+
+            if c == 'q' {
+                break;
+            } else if c == conf.left {
+                input.direction = InputDirection::Left;
+            } else if c == conf.right {
+                input.direction = InputDirection::Right;
+            } else if c == conf.hold {
+                todo!();
+            } else if c == conf.rotate_90 {
+                input.rotation = InputRotation::Quarter;
+            } else if c == conf.rotate_180 {
+                input.rotation = InputRotation::TwoQuarter;
+            } else if c == conf.rotate_270 {
+                input.rotation = InputRotation::ThreeQuarter;
+            } else if c == conf.left {
+                input.direction = InputDirection::Left;
+            } else if c == conf.soft_drop {
+                input.soft_drop = true;
+            } else if c == conf.hard_drop {
+                input.hard_drop = true;
+            }
+
+            board.tick(input);
+
+            buf.join(board.to_screen_buffer());
+
+            buf.print();
+        }
+    }
+
+    println!("Thanks for playing")
 }
