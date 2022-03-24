@@ -6,8 +6,8 @@ use crate::{
 };
 
 const BOARD_WIDTH: usize = 10;
-const BOARD_HEIGTH: usize = 45;
-const BOARD_SIZE: usize = BOARD_WIDTH * BOARD_HEIGTH;
+const BOARD_HEIGHT: usize = 45;
+const BOARD_SIZE: usize = BOARD_WIDTH * BOARD_HEIGHT;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 struct Bag {
@@ -81,7 +81,7 @@ impl Default for Board {
 }
 
 impl Board {
-    const START_POSITION: Point = Point::new(3, (BOARD_HEIGTH - 21) as i8);
+    const START_POSITION: Point = Point::new(3, (BOARD_HEIGHT - 21) as i8);
 
     fn legal_position(&self, piece: Piece, position: Point) -> bool {
         for (i, c) in piece.blocks().into_iter().enumerate() {
@@ -89,7 +89,7 @@ impl Board {
             let y = ((i as i8) - x) / 4 + position.y();
 
             if c != Colour::None {
-                if x < 0 || x > 10 || y < 0 || y > 44 {
+                if x < 0 || x >= BOARD_WIDTH as i8 || y < 0 || y >= BOARD_HEIGHT as i8 {
                     return false;
                 }
 
@@ -98,8 +98,6 @@ impl Board {
                 }
             }
         }
-
-        println!("{:?} {:?}", piece, position);
 
         true
     }
@@ -165,8 +163,6 @@ impl Board {
             let x = (i as i8) % 4 + self.position.x();
             let y = ((i as i8) - x) / 4 + self.position.y();
 
-            println!("{} {}", x, y);
-
             if c != Colour::None {
                 self.board[x as usize + y as usize * BOARD_WIDTH] = c;
             }
@@ -197,8 +193,6 @@ impl Board {
         } else if input.soft_drop {
             self.soft_drop();
         }
-
-        // self.soft_drop();
     }
 
     pub fn to_screen_buffer(&self) -> ScreenBuffer {
@@ -209,13 +203,13 @@ impl Board {
             buf.write(13, y, ScreenCell::new('#', Colour::Grey));
         }
 
-        for y in 0..BOARD_HEIGTH {
+        for y in 0..BOARD_HEIGHT {
             for x in 0..BOARD_WIDTH {
-                let x = x + 3;
+                let colour = self.board[x + y * BOARD_WIDTH];
                 let y = y.wrapping_sub(23);
 
-                if y < 30 {
-                    buf.write(x, y, ScreenCell::new('@', self.board[x + y * BOARD_WIDTH]))
+                if y < BOARD_HEIGHT && colour != Colour::None {
+                    buf.write(x + 3, y, ScreenCell::new('@', colour));
                 }
             }
         }
