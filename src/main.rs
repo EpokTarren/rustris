@@ -4,6 +4,7 @@ use crate::{
 };
 
 mod board;
+mod config;
 mod display;
 mod get_key;
 mod kicks;
