@@ -216,7 +216,7 @@ impl Board {
 
         for (i, c) in self.piece.blocks().into_iter().enumerate() {
             let x = (i as i8) % 4 + self.position.x() + 3;
-            let y = (((i as i8) - x) / 4 + self.position.y()).wrapping_sub(23);
+            let y = (((i as i8) - x) / 4 + self.position.y()).wrapping_sub(22);
 
             if c != Colour::None {
                 buf.write(x as usize, y as usize, ScreenCell::new('@', c));
