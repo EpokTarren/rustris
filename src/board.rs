@@ -7,7 +7,6 @@ use crate::{
 
 const BOARD_WIDTH: usize = 10;
 const BOARD_HEIGHT: usize = 45;
-const BOARD_SIZE: usize = BOARD_WIDTH * BOARD_HEIGHT;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 struct Bag {
@@ -60,7 +59,7 @@ pub struct Input {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Board {
     bag: Bag,
-    board: [Colour; BOARD_SIZE],
+    board: [[Colour; BOARD_WIDTH]; BOARD_HEIGHT],
     piece: Piece,
     position: Point,
 }
@@ -73,7 +72,7 @@ impl Default for Board {
 
         Self {
             bag,
-            board: [Colour::None; BOARD_SIZE],
+            board: [[Colour::None; BOARD_WIDTH]; BOARD_HEIGHT],
             piece,
             position: Self::START_POSITION,
         }
@@ -84,17 +83,23 @@ impl Board {
     const START_POSITION: Point = Point::new(3, (BOARD_HEIGHT - 21) as i8);
 
     fn legal_position(&self, piece: Piece, position: Point) -> bool {
-        for (i, c) in piece.blocks().into_iter().enumerate() {
-            let x = (i as i8) % 4 + position.x();
-            let y = ((i as i8) - x) / 4 + position.y();
+        let blocks = piece.blocks();
 
-            if c != Colour::None {
-                if x < 0 || x >= BOARD_WIDTH as i8 || y < 0 || y >= BOARD_HEIGHT as i8 {
-                    return false;
-                }
+        for y in 0..4 {
+            for x in 0..4 {
+                let c = blocks[y][x];
 
-                if self.board[x as usize + (y as usize) * BOARD_WIDTH] != Colour::None {
-                    return false;
+                if c != Colour::None {
+                    let x = x as i8 + position.x();
+                    let y = y as i8 + position.y();
+
+                    if x < 0 || x >= BOARD_WIDTH as i8 || y < 0 || y >= BOARD_HEIGHT as i8 {
+                        return false;
+                    }
+
+                    if self.board[y as usize][x as usize] != Colour::None {
+                        return false;
+                    }
                 }
             }
         }
@@ -165,12 +170,17 @@ impl Board {
     }
 
     fn next_piece(&mut self) {
-        for (i, c) in self.piece.blocks().into_iter().enumerate() {
-            let x = (i as i8) % 4 + self.position.x();
-            let y = ((i as i8) - x) / 4 + self.position.y();
+        let blocks = self.piece.blocks();
 
-            if c != Colour::None {
-                self.board[x as usize + y as usize * BOARD_WIDTH] = c;
+        for y in 0..4 {
+            for x in 0..4 {
+                let c = blocks[y][x];
+
+                if c != Colour::None {
+                    let x = x as i8 + self.position.x();
+                    let y = y as i8 + self.position.y();
+                    self.board[y as usize][x as usize] = c;
+                }
             }
         }
 
@@ -211,7 +221,7 @@ impl Board {
 
         for y in 0..BOARD_HEIGHT {
             for x in 0..BOARD_WIDTH {
-                let colour = self.board[x + y * BOARD_WIDTH];
+                let colour = self.board[y][x];
                 let y = y.wrapping_sub(23);
 
                 if y < BOARD_HEIGHT && colour != Colour::None {
@@ -220,12 +230,18 @@ impl Board {
             }
         }
 
-        for (i, c) in self.piece.blocks().into_iter().enumerate() {
-            let x = (i as i8) % 4 + self.position.x() + 3;
-            let y = (((i as i8) - x) / 4 + self.position.y()).wrapping_sub(22);
+        let blocks = self.piece.blocks();
 
-            if c != Colour::None {
-                buf.write(x as usize, y as usize, ScreenCell::new('@', c));
+        for y in 0..4 {
+            for x in 0..4 {
+                let c = blocks[y][x];
+
+                if c != Colour::None {
+                    let x = x as i8 + self.position.x() + 3;
+                    let y = y as i8 + self.position.y().wrapping_sub(22);
+
+                    buf.write(x as usize, y as usize, ScreenCell::new('@', c));
+                }
             }
         }
 
