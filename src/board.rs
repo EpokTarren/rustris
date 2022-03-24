@@ -61,6 +61,7 @@ pub struct Board {
     bag: Bag,
     board: [[Colour; BOARD_WIDTH]; BOARD_HEIGHT],
     piece: Piece,
+    contact: u8,
     position: Point,
 }
 
@@ -74,6 +75,7 @@ impl Default for Board {
             bag,
             board: [[Colour::None; BOARD_WIDTH]; BOARD_HEIGHT],
             piece,
+            contact: 0,
             position: Self::START_POSITION,
         }
     }
@@ -161,15 +163,18 @@ impl Board {
         }
     }
 
-    fn soft_drop(&mut self) {
+    fn soft_drop(&mut self) -> bool {
         let position = self.position + Point::new(0, 1);
 
         if self.legal_position(self.piece, position) {
             self.position = position;
+            true
+        } else {
+            false
         }
     }
 
-    fn next_piece(&mut self) {
+    fn next_piece(&mut self) -> usize {
         let blocks = self.piece.blocks();
 
         for y in 0..4 {
@@ -186,28 +191,41 @@ impl Board {
 
         self.piece = self.bag.next();
         self.position = Self::START_POSITION;
+
+        0
     }
 
-    fn hard_drop(&mut self) {
-        let mut position = self.position;
-        self.soft_drop();
+    fn hard_drop(&mut self) -> usize {
+        while self.soft_drop() {}
 
-        while position != self.position {
-            position = self.position;
-            self.soft_drop()
-        }
-
-        self.next_piece();
+        self.next_piece()
     }
 
-    pub fn tick(&mut self, input: Input) {
+    pub fn input(&mut self, input: Input) -> usize {
         self.move_piece(input.direction);
         self.rotate_piece(input.rotation);
 
         if input.hard_drop {
-            self.hard_drop();
+            self.hard_drop()
         } else if input.soft_drop {
             self.soft_drop();
+            0
+        } else {
+            0
+        }
+    }
+
+    pub fn tick(&mut self) -> usize {
+        if !self.soft_drop() {
+            self.contact += 1;
+        } else {
+            self.contact = 0;
+        }
+
+        if self.contact == 30 {
+            self.next_piece()
+        } else {
+            0
         }
     }
 

@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use crate::{
     board::{Board, Input, InputDirection, InputRotation},
     config::Config,
@@ -17,10 +19,10 @@ fn main() {
 
     let conf = Config::from_file(Config::PATH);
 
+    let start = Instant::now();
+
     loop {
         if let Some(c) = get_key::get_key() {
-            let mut buf: ScreenBuffer = Default::default();
-
             let mut input = Input {
                 direction: InputDirection::None,
                 hard_drop: false,
@@ -52,7 +54,15 @@ fn main() {
                 input.hard_drop = true;
             }
 
-            board.tick(input);
+            board.input(input);
+        }
+
+        let duration = start.elapsed();
+
+        if duration.as_millis() % 100 == 0 {
+            let mut buf: ScreenBuffer = Default::default();
+
+            board.tick();
 
             buf.join(board.to_screen_buffer());
 
