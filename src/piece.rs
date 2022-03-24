@@ -221,4 +221,15 @@ impl Piece {
     pub const fn colour(&self) -> Colour {
         self.kind.colour()
     }
+
+    pub const fn rotation(&self) -> u8 {
+        self.rotation
+    }
+
+    pub const fn rotate(&self, turns: u8) -> Self {
+        Self {
+            kind: self.kind(),
+            rotation: self.rotation.wrapping_add(turns) % 4,
+        }
+    }
 }

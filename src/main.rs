@@ -1,26 +1,29 @@
-use display::{Colour, ScreenBuffer};
+use crate::{
+    board::{Board, Input, InputDirection, InputRotation},
+    display::ScreenBuffer,
+};
 
+mod board;
 mod display;
+mod kicks;
 mod piece;
+mod point;
 
 fn main() {
     let mut buf: ScreenBuffer = Default::default();
 
-    let out = [
-        ("Cyan", Colour::Cyan),
-        ("Yellow", Colour::Yellow),
-        ("Purple", Colour::Purple),
-        ("Green", Colour::Green),
-        ("Red", Colour::Red),
-        ("Blue", Colour::Blue),
-        ("Orange", Colour::Orange),
-        ("Grey", Colour::Grey),
-        ("White", Colour::White),
-    ];
+    let mut board: Board = Default::default();
 
-    for (i, (s, c)) in out.into_iter().enumerate() {
-        buf.write_string(0, i, s, c);
-    }
+    let input = Input {
+        direction: InputDirection::Left,
+        hard_drop: true,
+        rotation: InputRotation::Quarter,
+        soft_drop: true,
+    };
+
+    board.tick(input);
+
+    buf.join(board.to_screen_buffer());
 
     buf.print();
 }
