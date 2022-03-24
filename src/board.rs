@@ -128,7 +128,13 @@ impl Board {
             InputRotation::ThreeQuarter => 1,
         };
 
-        let piece = self.piece.rotate(delta);
+        let piece = self.piece.rotate(match direction {
+            InputRotation::None => 0,
+            InputRotation::Quarter => 1,
+            InputRotation::TwoQuarter => 2,
+            InputRotation::ThreeQuarter => 3,
+        });
+
         let delta = delta as usize;
 
         let mut process_kick = |table: [[[Point; 5]; 2]; 4]| {
