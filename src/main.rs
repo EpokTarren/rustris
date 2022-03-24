@@ -5,6 +5,7 @@ use crate::{
 
 mod board;
 mod display;
+mod get_key;
 mod kicks;
 mod piece;
 mod point;
