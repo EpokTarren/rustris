@@ -45,6 +45,17 @@ impl Bag {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TickResult {
+    None,
+    One,
+    Two,
+    Three,
+    Four,
+    GameOver,
+    Spin(PieceType, u8),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Board {
     bag: Bag,
     board: [[Colour; BOARD_WIDTH]; BOARD_HEIGHT],
@@ -173,7 +184,7 @@ impl Board {
         }
     }
 
-    fn next_piece(&mut self) -> usize {
+    fn next_piece(&mut self) -> TickResult {
         let blocks = self.piece.blocks();
 
         for y in 0..4 {
@@ -192,10 +203,46 @@ impl Board {
         self.may_hold = true;
         self.position = Self::START_POSITION;
 
-        0
+        if self.legal_position(self.piece, self.position) {
+            let mut cleared_indexes: Vec<usize> = Vec::with_capacity(4);
+
+            for y in 0..BOARD_HEIGHT {
+                if self.board[y]
+                    .iter()
+                    .map(|tile| *tile != Colour::None)
+                    .reduce(|acc, tile| acc && tile)
+                    .unwrap()
+                {
+                    cleared_indexes.push(y);
+                }
+            }
+
+            let cleared = cleared_indexes.len();
+
+            while let Some(i) = cleared_indexes.pop() {
+                for y in (1..=i).rev() {
+                    // let y = i - y;
+
+                    self.board[y] = self.board[y - 1];
+                }
+
+                self.board[0] = [Colour::None; BOARD_WIDTH];
+            }
+
+            match cleared {
+                0 => TickResult::None,
+                1 => TickResult::One,
+                2 => TickResult::Two,
+                3 => TickResult::Three,
+                4 => TickResult::Four,
+                _ => unreachable!("It should be impossible to clear outside the range of 0-4"),
+            }
+        } else {
+            TickResult::GameOver
+        }
     }
 
-    fn hard_drop(&mut self) -> usize {
+    fn hard_drop(&mut self) -> TickResult {
         while self.test_soft_drop() {
             self.soft_drop();
         }
@@ -218,7 +265,7 @@ impl Board {
         }
     }
 
-    fn input(&mut self, input: Input) -> usize {
+    fn input(&mut self, input: Input) -> TickResult {
         self.move_piece(input.direction);
         self.rotate_piece(input.rotation);
 
@@ -227,16 +274,17 @@ impl Board {
         }
 
         if input.hard_drop {
-            self.hard_drop()
-        } else if input.soft_drop {
-            self.soft_drop();
-            0
-        } else {
-            0
+            return self.hard_drop();
         }
+
+        if input.soft_drop {
+            self.soft_drop();
+        }
+
+        TickResult::None
     }
 
-    pub fn tick(&mut self, input: Input, tick: u128) -> usize {
+    pub fn tick(&mut self, input: Input, tick: u128) -> TickResult {
         self.input(input);
 
         if tick % 500 == 0 {
@@ -253,10 +301,10 @@ impl Board {
             if self.contact == 30 {
                 self.next_piece()
             } else {
-                0
+                TickResult::None
             }
         } else {
-            0
+            TickResult::None
         }
     }
 
