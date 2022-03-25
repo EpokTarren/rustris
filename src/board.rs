@@ -48,8 +48,10 @@ impl Bag {
 pub struct Board {
     bag: Bag,
     board: [[Colour; BOARD_WIDTH]; BOARD_HEIGHT],
+    held: Option<Piece>,
     piece: Piece,
     contact: u8,
+    may_hold: bool,
     position: Point,
 }
 
@@ -62,8 +64,10 @@ impl Default for Board {
         Self {
             bag,
             board: [[Colour::None; BOARD_WIDTH]; BOARD_HEIGHT],
+            held: None,
             piece,
             contact: 0,
+            may_hold: true,
             position: Self::START_POSITION,
         }
     }
@@ -185,6 +189,7 @@ impl Board {
         }
 
         self.piece = self.bag.next();
+        self.may_hold = true;
         self.position = Self::START_POSITION;
 
         0
@@ -198,9 +203,28 @@ impl Board {
         self.next_piece()
     }
 
+    fn hold(&mut self) {
+        if self.may_hold {
+            if let Some(held) = self.held {
+                self.held = Some(Piece::new(self.piece.kind()));
+                self.piece = Piece::new(held.kind());
+            } else {
+                self.held = Some(Piece::new(self.piece.kind()));
+                self.piece = self.bag.next();
+            }
+
+            self.position = Self::START_POSITION;
+            self.may_hold = false
+        }
+    }
+
     fn input(&mut self, input: Input) -> usize {
         self.move_piece(input.direction);
         self.rotate_piece(input.rotation);
+
+        if input.hold {
+            self.hold();
+        }
 
         if input.hard_drop {
             self.hard_drop()
