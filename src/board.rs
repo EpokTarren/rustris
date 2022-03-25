@@ -1,5 +1,6 @@
 use crate::{
     display::{Colour, ScreenBuffer, ScreenCell},
+    input::{Input, InputDirection, InputRotation},
     kicks::{I_KICKS, KICKS},
     piece::{Piece, PieceType},
     point::Point,
@@ -31,29 +32,6 @@ impl Bag {
 
         Piece::new(t)
     }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum InputDirection {
-    None,
-    Left,
-    Right,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum InputRotation {
-    None,
-    Quarter,
-    TwoQuarter,
-    ThreeQuarter,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Input {
-    pub direction: InputDirection,
-    pub hard_drop: bool,
-    pub rotation: InputRotation,
-    pub soft_drop: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -163,14 +141,21 @@ impl Board {
         }
     }
 
-    fn soft_drop(&mut self) -> bool {
+    fn test_soft_drop(&self) -> bool {
+        let position = self.position + Point::new(0, 1);
+
+        if self.legal_position(self.piece, position) {
+            true
+        } else {
+            false
+        }
+    }
+
+    fn soft_drop(&mut self) {
         let position = self.position + Point::new(0, 1);
 
         if self.legal_position(self.piece, position) {
             self.position = position;
-            true
-        } else {
-            false
         }
     }
 
@@ -196,12 +181,14 @@ impl Board {
     }
 
     fn hard_drop(&mut self) -> usize {
-        while self.soft_drop() {}
+        while self.test_soft_drop() {
+            self.soft_drop();
+        }
 
         self.next_piece()
     }
 
-    pub fn input(&mut self, input: Input) -> usize {
+    fn input(&mut self, input: Input) -> usize {
         self.move_piece(input.direction);
         self.rotate_piece(input.rotation);
 
@@ -215,15 +202,25 @@ impl Board {
         }
     }
 
-    pub fn tick(&mut self) -> usize {
-        if !self.soft_drop() {
-            self.contact += 1;
-        } else {
-            self.contact = 0;
+    pub fn tick(&mut self, input: Input, tick: u128) -> usize {
+        self.input(input);
+
+        if tick % 500 == 0 {
+            self.soft_drop();
         }
 
-        if self.contact == 30 {
-            self.next_piece()
+        if tick % 50 == 0 {
+            if !self.test_soft_drop() {
+                self.contact += 1;
+            } else {
+                self.contact = 0;
+            }
+
+            if self.contact == 30 {
+                self.next_piece()
+            } else {
+                0
+            }
         } else {
             0
         }
@@ -256,7 +253,7 @@ impl Board {
 
                 if c != Colour::None {
                     let x = x as i8 + self.position.x() + 3;
-                    let y = y as i8 + self.position.y().wrapping_sub(22);
+                    let y = y as i8 + self.position.y().wrapping_sub(23);
 
                     buf.write(x as usize, y as usize, ScreenCell::new('@', c));
                 }

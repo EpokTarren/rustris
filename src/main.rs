@@ -1,15 +1,12 @@
 use std::time::Instant;
 
-use crate::{
-    board::{Board, Input, InputDirection, InputRotation},
-    config::Config,
-    display::ScreenBuffer,
-};
+use crate::{board::Board, config::Config, input::Input};
 
 mod board;
 mod config;
 mod display;
 mod get_key;
+mod input;
 mod kicks;
 mod piece;
 mod point;
@@ -21,52 +18,33 @@ fn main() {
 
     let start = Instant::now();
 
+    let mut input = Input::default();
+    let mut last_update: u128 = 0;
+
     loop {
         if let Some(c) = get_key::get_key() {
-            let mut input = Input {
-                direction: InputDirection::None,
-                hard_drop: false,
-                rotation: InputRotation::None,
-                soft_drop: false,
-            };
-
             let c = c.to_ascii_lowercase();
 
-            if c == 'q' {
+            if c == conf.quit {
                 break;
-            } else if c == conf.left {
-                input.direction = InputDirection::Left;
-            } else if c == conf.right {
-                input.direction = InputDirection::Right;
-            } else if c == conf.hold {
-                todo!();
-            } else if c == conf.rotate_90 {
-                input.rotation = InputRotation::Quarter;
-            } else if c == conf.rotate_180 {
-                input.rotation = InputRotation::TwoQuarter;
-            } else if c == conf.rotate_270 {
-                input.rotation = InputRotation::ThreeQuarter;
-            } else if c == conf.left {
-                input.direction = InputDirection::Left;
-            } else if c == conf.soft_drop {
-                input.soft_drop = true;
-            } else if c == conf.hard_drop {
-                input.hard_drop = true;
             }
 
-            board.input(input);
+            input.update(c, conf);
         }
 
-        let duration = start.elapsed();
+        let now = start.elapsed().as_millis();
 
-        if duration.as_millis() % 100 == 0 {
-            let mut buf: ScreenBuffer = Default::default();
+        if now != last_update {
+            board.tick(input, now);
 
-            board.tick();
+            input = Input::default();
 
-            buf.join(board.to_screen_buffer());
+            last_update = now;
 
-            buf.print();
+            if now % 100 == 0 {
+                let screen = board.to_screen_buffer();
+                screen.print();
+            }
         }
     }
 
