@@ -261,10 +261,46 @@ impl Board {
     }
 
     pub fn to_screen_buffer(&self) -> ScreenBuffer {
-        let mut buf: ScreenBuffer = Default::default();
+        let mut buf = ScreenBuffer::default();
+
+        fn draw_piece(buf: &mut ScreenBuffer, piece: Piece, offset_x: i8, offset_y: i8) {
+            let blocks = piece.blocks();
+
+            for y in 0..4 {
+                for x in 0..4 {
+                    let c = blocks[y][x];
+
+                    if c != Colour::None {
+                        let x = x as i8 + offset_x;
+                        let y = y as i8 + offset_y;
+
+                        buf.write(x as usize, y as usize, ScreenCell::new('@', c));
+                    }
+                }
+            }
+        }
+
+        const HOLD_LEFT: usize = 2;
+        const HOLD_TOP: usize = 3;
+
+        buf.write_string(HOLD_LEFT, HOLD_TOP - 1, "Hold", Colour::White);
+
+        for y in HOLD_TOP..=(HOLD_TOP + 5) {
+            buf.write(HOLD_LEFT, y, ScreenCell::new('#', Colour::Grey));
+            buf.write(HOLD_LEFT + 7, y, ScreenCell::new('#', Colour::Grey));
+        }
+
+        if let Some(piece) = self.held {
+            draw_piece(&mut buf, piece, (HOLD_TOP + 1) as i8, (HOLD_LEFT + 2) as i8);
+        }
+
+        const HOLD_BOTTOM: &str = "######";
+
+        buf.write_string(HOLD_LEFT + 1, HOLD_TOP, HOLD_BOTTOM, Colour::Grey);
+        buf.write_string(HOLD_LEFT + 1, HOLD_TOP + 5, HOLD_BOTTOM, Colour::Grey);
 
         const PLAY_FIELD_BOTTOM: &str = "##########";
-        const PLAY_FIELD_LEFT: usize = 3;
+        const PLAY_FIELD_LEFT: usize = HOLD_LEFT + 7 + 3;
 
         for y in 2..23 {
             buf.write(PLAY_FIELD_LEFT - 1, y, ScreenCell::new('#', Colour::Grey));
@@ -288,20 +324,12 @@ impl Board {
             }
         }
 
-        let blocks = self.piece.blocks();
-
-        for y in 0..4 {
-            for x in 0..4 {
-                let c = blocks[y][x];
-
-                if c != Colour::None {
-                    let x = x as i8 + self.position.x() + PLAY_FIELD_LEFT as i8;
-                    let y = y as i8 + self.position.y().wrapping_sub(23);
-
-                    buf.write(x as usize, y as usize, ScreenCell::new('@', c));
-                }
-            }
-        }
+        draw_piece(
+            &mut buf,
+            self.piece,
+            self.position.x() + PLAY_FIELD_LEFT as i8,
+            self.position.y().wrapping_sub(23),
+        );
 
         const NEXT_LEFT: usize = PLAY_FIELD_LEFT + BOARD_WIDTH + 4;
         const NEXT_TOP: usize = 3;
@@ -314,27 +342,18 @@ impl Board {
         }
 
         for i in 0..3 {
-            let piece = self.bag.peek(i);
-            let blocks = piece.blocks();
-
-            for y in 0..4 {
-                for x in 0..4 {
-                    let c = blocks[y][x];
-
-                    if c != Colour::None {
-                        let x = x + NEXT_LEFT + 2;
-                        let y = y + NEXT_TOP + 1 + i * 3;
-
-                        buf.write(x as usize, y as usize, ScreenCell::new('@', c));
-                    }
-                }
-            }
+            draw_piece(
+                &mut buf,
+                self.bag.peek(i),
+                (NEXT_LEFT + 2) as i8,
+                (NEXT_TOP + 1 + i * 3) as i8,
+            );
         }
 
-        const HOLD_BOTTOM: &str = "######";
+        const NEXT_BOTTOM: &str = "######";
 
-        buf.write_string(NEXT_LEFT + 1, NEXT_TOP, HOLD_BOTTOM, Colour::Grey);
-        buf.write_string(NEXT_LEFT + 1, NEXT_TOP + 11, HOLD_BOTTOM, Colour::Grey);
+        buf.write_string(NEXT_LEFT + 1, NEXT_TOP, NEXT_BOTTOM, Colour::Grey);
+        buf.write_string(NEXT_LEFT + 1, NEXT_TOP + 11, NEXT_BOTTOM, Colour::Grey);
 
         buf
     }
