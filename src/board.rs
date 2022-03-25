@@ -2,7 +2,7 @@ use crate::{
     display::{Colour, ScreenBuffer, ScreenCell},
     input::{Input, InputDirection, InputRotation},
     kicks::{I_KICKS, KICKS},
-    piece::{Piece, PieceType},
+    piece::{self, Piece, PieceType},
     point::Point,
 };
 
@@ -15,7 +15,7 @@ struct Bag {
 }
 
 impl Bag {
-    pub fn next(&mut self) -> Piece {
+    fn nth(i: usize) -> Piece {
         const KINDS: [PieceType; 7] = [
             PieceType::I,
             PieceType::J,
@@ -26,11 +26,21 @@ impl Bag {
             PieceType::Z,
         ];
 
-        let t = KINDS[self.i % 7];
+        let t = KINDS[i % 7];
+
+        Piece::new(t)
+    }
+
+    pub fn next(&mut self) -> Piece {
+        let piece = Self::nth(self.i);
 
         self.i += 1;
 
-        Piece::new(t)
+        piece
+    }
+
+    pub fn peek(&self, i: usize) -> Piece {
+        Self::nth(self.i + i)
     }
 }
 
@@ -229,10 +239,19 @@ impl Board {
     pub fn to_screen_buffer(&self) -> ScreenBuffer {
         let mut buf: ScreenBuffer = Default::default();
 
+        const PLAY_FIELD_BOTTOM: &str = "##########";
+        const PLAY_FIELD_LEFT: usize = 3;
+
         for y in 2..23 {
-            buf.write(2, y, ScreenCell::new('#', Colour::Grey));
-            buf.write(13, y, ScreenCell::new('#', Colour::Grey));
+            buf.write(PLAY_FIELD_LEFT - 1, y, ScreenCell::new('#', Colour::Grey));
+            buf.write(
+                PLAY_FIELD_LEFT + BOARD_WIDTH,
+                y,
+                ScreenCell::new('#', Colour::Grey),
+            );
         }
+
+        buf.write_string(PLAY_FIELD_LEFT, 22, PLAY_FIELD_BOTTOM, Colour::Grey);
 
         for y in 0..BOARD_HEIGHT {
             for x in 0..BOARD_WIDTH {
@@ -240,7 +259,7 @@ impl Board {
                 let y = y.wrapping_sub(23);
 
                 if y < BOARD_HEIGHT && colour != Colour::None {
-                    buf.write(x + 3, y, ScreenCell::new('@', colour));
+                    buf.write(x + PLAY_FIELD_LEFT, y, ScreenCell::new('@', colour));
                 }
             }
         }
@@ -252,7 +271,7 @@ impl Board {
                 let c = blocks[y][x];
 
                 if c != Colour::None {
-                    let x = x as i8 + self.position.x() + 3;
+                    let x = x as i8 + self.position.x() + PLAY_FIELD_LEFT as i8;
                     let y = y as i8 + self.position.y().wrapping_sub(23);
 
                     buf.write(x as usize, y as usize, ScreenCell::new('@', c));
@@ -260,9 +279,38 @@ impl Board {
             }
         }
 
-        const BOTTOM: &str = "##########";
+        const NEXT_LEFT: usize = PLAY_FIELD_LEFT + BOARD_WIDTH + 4;
+        const NEXT_TOP: usize = 3;
 
-        buf.write_string(3, 22, BOTTOM, Colour::Grey);
+        buf.write_string(NEXT_LEFT, NEXT_TOP - 1, "Next", Colour::White);
+
+        for y in NEXT_TOP..=(NEXT_TOP + 11) {
+            buf.write(NEXT_LEFT, y, ScreenCell::new('#', Colour::Grey));
+            buf.write(NEXT_LEFT + 7, y, ScreenCell::new('#', Colour::Grey));
+        }
+
+        for i in 0..3 {
+            let piece = self.bag.peek(i);
+            let blocks = piece.blocks();
+
+            for y in 0..4 {
+                for x in 0..4 {
+                    let c = blocks[y][x];
+
+                    if c != Colour::None {
+                        let x = x + NEXT_LEFT + 2;
+                        let y = y + NEXT_TOP + 1 + i * 3;
+
+                        buf.write(x as usize, y as usize, ScreenCell::new('@', c));
+                    }
+                }
+            }
+        }
+
+        const HOLD_BOTTOM: &str = "######";
+
+        buf.write_string(NEXT_LEFT + 1, NEXT_TOP, HOLD_BOTTOM, Colour::Grey);
+        buf.write_string(NEXT_LEFT + 1, NEXT_TOP + 11, HOLD_BOTTOM, Colour::Grey);
 
         buf
     }
