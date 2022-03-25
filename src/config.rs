@@ -14,7 +14,7 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            quit: 'c',
+            quit: 'q',
             hold: 'c',
             left: ',',
             right: '-',
