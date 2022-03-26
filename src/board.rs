@@ -2,7 +2,7 @@ use crate::{
     display::{Colour, ScreenBuffer, ScreenCell},
     input::{Input, InputDirection, InputRotation},
     kicks::{I_KICKS, KICKS},
-    piece::{self, Piece, PieceType},
+    piece::{Piece, PieceType},
     point::Point,
 };
 
@@ -206,7 +206,7 @@ impl Board {
         if self.legal_position(self.piece, self.position) {
             let mut cleared_indexes: Vec<usize> = Vec::with_capacity(4);
 
-            for y in 0..BOARD_HEIGHT {
+            for y in (0..BOARD_HEIGHT).rev() {
                 if self.board[y]
                     .iter()
                     .map(|tile| *tile != Colour::None)
@@ -221,8 +221,6 @@ impl Board {
 
             while let Some(i) = cleared_indexes.pop() {
                 for y in (1..=i).rev() {
-                    // let y = i - y;
-
                     self.board[y] = self.board[y - 1];
                 }
 
@@ -285,8 +283,6 @@ impl Board {
     }
 
     pub fn tick(&mut self, input: Input, tick: u128) -> TickResult {
-        self.input(input);
-
         if tick % 500 == 0 {
             self.soft_drop();
         }
@@ -299,13 +295,15 @@ impl Board {
             }
 
             if self.contact == 30 {
-                self.next_piece()
-            } else {
-                TickResult::None
+                let res = self.next_piece();
+
+                if res != TickResult::None {
+                    panic!("{:?}", res);
+                }
             }
-        } else {
-            TickResult::None
         }
+
+        self.input(input)
     }
 
     pub fn to_screen_buffer(&self) -> ScreenBuffer {
