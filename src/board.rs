@@ -295,11 +295,7 @@ impl Board {
             }
 
             if self.contact == 30 {
-                let res = self.next_piece();
-
-                if res != TickResult::None {
-                    panic!("{:?}", res);
-                }
+                return self.next_piece();
             }
         }
 
