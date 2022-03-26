@@ -20,7 +20,6 @@ pub enum Colour {
 
 const BUFFER_WIDTH: usize = 80;
 const BUFFER_HEIGHT: usize = 24;
-const BUFFER_SIZE: usize = BUFFER_WIDTH * BUFFER_HEIGHT;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ScreenCell {
@@ -51,46 +50,56 @@ impl Display for ScreenCell {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ScreenBuffer {
-    buffer: [ScreenCell; BUFFER_SIZE],
+    buffer: [[ScreenCell; BUFFER_WIDTH]; BUFFER_HEIGHT],
 }
 
 impl Default for ScreenBuffer {
     fn default() -> Self {
         Self {
-            buffer: [Default::default(); BUFFER_SIZE],
+            buffer: [[ScreenCell::default(); BUFFER_WIDTH]; BUFFER_HEIGHT],
         }
     }
 }
 
+pub fn clear_terminal() {
+    print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
+}
+
+fn move_cursor(x: usize, y: usize) {
+    print!("\x1b[{y};{x}H", x = x, y = y);
+}
+
 impl ScreenBuffer {
-    pub fn write(&mut self, x: usize, y: usize, content: ScreenCell) {
+    pub fn write(&mut self, x: usize, y: usize, content: ScreenCell) -> &mut Self {
         if x < BUFFER_WIDTH && y < BUFFER_HEIGHT {
-            self.buffer[x + y * BUFFER_WIDTH] = content;
+            self.buffer[y][x] = content;
         }
+
+        self
     }
 
-    pub fn write_string(&mut self, x: usize, y: usize, content: &str, colour: Colour) {
+    pub fn write_string(&mut self, x: usize, y: usize, content: &str, colour: Colour) -> &mut Self {
         for (i, c) in content.chars().enumerate() {
             self.write(x + i, y, ScreenCell::new(c, colour));
         }
-    }
 
-    pub fn join(&mut self, buf: ScreenBuffer) {
-        for i in 0..BUFFER_SIZE {
-            if buf.buffer[i].colour != Colour::None {
-                self.buffer[i] = buf.buffer[i];
-            }
-        }
+        self
     }
 
     pub fn print(self) {
-        print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
+        move_cursor(0, 0);
 
-        for y in 0..BUFFER_HEIGHT {
-            for x in 0..BUFFER_WIDTH {
-                print!("{}", self.buffer[x + y * BUFFER_WIDTH]);
-            }
-            print!("\n")
-        }
+        let s = self
+            .buffer
+            .into_iter()
+            .map(|row| {
+                row.into_iter()
+                    .map(|cell| format!("{}", cell))
+                    .reduce(|acc, v| acc + &v)
+                    .unwrap()
+            })
+            .reduce(|acc, v| format!("{}\n{}", acc, v));
+
+        print!("{}\n", s.unwrap());
     }
 }
