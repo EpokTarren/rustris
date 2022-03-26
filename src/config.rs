@@ -1,3 +1,5 @@
+use std::path::Path;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Config {
     pub quit: char,
@@ -42,8 +44,8 @@ impl From<&str> for Config {
                 s.replace("'", "").replace("\"", "").trim().chars().nth(0)
             }
 
-            if let Some(option) = split.nth(0) {
-                if let Some(value) = split.nth(1) {
+            if let Some(option) = split.next() {
+                if let Some(value) = split.next() {
                     if let Some(key) = key(value) {
                         match option.trim() {
                             "hold" => config.hold = key,
@@ -67,16 +69,28 @@ impl From<&str> for Config {
 
 impl Config {
     pub fn from_file(filename: &str) -> Self {
-        if let Ok(contents) = std::fs::read_to_string(filename) {
-            Self::from(contents.as_str())
-        } else {
-            Default::default()
+        if let Ok(path) = Path::new(filename).canonicalize() {
+            if let Ok(contents) = std::fs::read_to_string(path.clone()) {
+                return Self::from(contents.as_str());
+            }
         }
+
+        Config::default()
     }
 
-    pub const PATH: &'static str = if cfg!(windows) {
-        "%USERPROFILE%\\.rustris\\config"
-    } else {
-        "~/.rustris/config"
-    };
+    pub fn folder() -> String {
+        if cfg!(windows) {
+            if let Ok(home) = std::env::var("USERPROFILE") {
+                home + r"\.rustris\"
+            } else {
+                String::default()
+            }
+        } else {
+            if let Ok(home) = std::env::var("HOME") {
+                home + "/.rustris/"
+            } else {
+                String::default()
+            }
+        }
+    }
 }

@@ -17,7 +17,10 @@ mod piece;
 mod point;
 
 fn main() {
-    let conf = Config::from_file(Config::PATH);
+    let folder = Config::folder();
+    let conf_file = folder.clone() + "config";
+    let conf = Config::from_file(&conf_file);
+
     let start = Instant::now();
 
     let mut board = Board::default();
