@@ -1,4 +1,5 @@
 use crate::{
+    bag::Bag,
     display::{Colour, ScreenBuffer, ScreenCell},
     input::{Input, InputDirection, InputRotation},
     kicks::{I_KICKS, KICKS},
@@ -8,41 +9,6 @@ use crate::{
 
 const BOARD_WIDTH: usize = 10;
 const BOARD_HEIGHT: usize = 45;
-
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-struct Bag {
-    i: usize,
-}
-
-impl Bag {
-    fn nth(i: usize) -> Piece {
-        const KINDS: [PieceType; 7] = [
-            PieceType::I,
-            PieceType::J,
-            PieceType::L,
-            PieceType::O,
-            PieceType::S,
-            PieceType::T,
-            PieceType::Z,
-        ];
-
-        let t = KINDS[i % 7];
-
-        Piece::new(t)
-    }
-
-    pub fn next(&mut self) -> Piece {
-        let piece = Self::nth(self.i);
-
-        self.i += 1;
-
-        piece
-    }
-
-    pub fn peek(&self, i: usize) -> Piece {
-        Self::nth(self.i + i)
-    }
-}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TickResult {
@@ -55,7 +21,7 @@ pub enum TickResult {
     Spin(PieceType, u8),
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Board {
     bag: Bag,
     board: [[Colour; BOARD_WIDTH]; BOARD_HEIGHT],
@@ -67,26 +33,22 @@ pub struct Board {
     last_input_rot: bool,
 }
 
-impl Default for Board {
-    fn default() -> Self {
-        let mut bag: Bag = Default::default();
-
-        let piece = bag.next();
+impl Board {
+    pub fn new(mut bag: Bag) -> Self {
+        let piece = Piece::new(bag.next());
 
         Self {
             bag,
-            board: [[Colour::None; BOARD_WIDTH]; BOARD_HEIGHT],
             held: None,
             piece,
+            board: [[Colour::None; BOARD_WIDTH]; BOARD_HEIGHT],
             contact: 0,
             may_hold: true,
             position: Self::START_POSITION,
             last_input_rot: false,
         }
     }
-}
 
-impl Board {
     const START_POSITION: Point = Point::new(3, (BOARD_HEIGHT - 21) as i8);
 
     fn legal_position(&self, piece: Piece, position: Point) -> bool {
@@ -266,7 +228,7 @@ impl Board {
             }
         }
 
-        self.piece = self.bag.next();
+        self.piece = Piece::new(self.bag.next());
         self.may_hold = true;
         self.position = Self::START_POSITION;
 
@@ -329,7 +291,7 @@ impl Board {
                 self.piece = Piece::new(held.kind());
             } else {
                 self.held = Some(Piece::new(self.piece.kind()));
-                self.piece = self.bag.next();
+                self.piece = Piece::new(self.bag.next());
             }
 
             self.position = Self::START_POSITION;
@@ -460,7 +422,7 @@ impl Board {
         for i in 0..3 {
             draw_piece(
                 &mut buf,
-                self.bag.peek(i),
+                Piece::new(self.bag.peek(i)),
                 (NEXT_LEFT + 2) as i8,
                 (NEXT_TOP + 1 + i * 3) as i8,
             );

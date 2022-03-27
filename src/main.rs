@@ -1,12 +1,16 @@
 use std::time::Instant;
 
+use rand::{RngCore, SeedableRng};
+
 use crate::{
+    bag::Bag,
     board::{Board, TickResult},
     config::Config,
     display::Colour,
     input::Input,
 };
 
+mod bag;
 mod board;
 mod config;
 mod display;
@@ -22,8 +26,17 @@ fn main() {
     let conf = Config::from_file(&conf_file);
 
     let start = Instant::now();
+    let seed = {
+        let mut seed: [u8; 32] = [0; 32];
+        let mut rng = rand::rngs::SmallRng::from_entropy();
 
-    let mut board = Board::default();
+        rng.fill_bytes(&mut seed);
+
+        seed
+    };
+    let bag = Bag::new(seed);
+
+    let mut board = Board::new(bag);
     let mut last_update: u128 = 0;
     let mut score: u128 = 0;
     let mut lines: u128 = 0;
