@@ -24,27 +24,29 @@ fn main() {
     let start = Instant::now();
 
     let mut board = Board::default();
-    let mut input = Input::default();
     let mut last_update: u128 = 0;
     let mut score: u128 = 0;
     let mut lines: u128 = 0;
 
     display::clear_terminal();
 
-    loop {
-        if let Some(c) = get_key::get_key() {
-            let c = c.to_ascii_lowercase();
-
-            if c == conf.quit {
-                break;
-            }
-
-            input.update(c, conf);
-        }
-
-        let now = start.elapsed().as_millis();
+    'game_loop: loop {
+        let duration = start.elapsed();
+        let now = duration.as_millis();
 
         if now != last_update {
+            let mut input = Input::default();
+
+            while let Some(c) = get_key::get_key() {
+                let c = c.to_ascii_lowercase();
+
+                if c == conf.quit {
+                    break 'game_loop;
+                }
+
+                input.update(c, conf);
+            }
+
             let tick = board.tick(input, now);
             let (lines_cleared, score_increase) = match tick {
                 TickResult::None => (0, 0),
@@ -77,15 +79,19 @@ fn main() {
             lines += lines_cleared;
             score += score_increase;
 
-            input = Input::default();
-
             last_update = now;
 
             if now % 50 == 0 {
+                let ms = now % 1000;
+                let s = duration.as_secs() % 60;
+                let m = duration.as_secs() / 60;
+                let time = format!("Time: {:0w$}:{:0w$}.{:0w_ms$}", m, s, ms, w = 2, w_ms = 3);
+
                 board
                     .to_screen_buffer()
                     .write_string(26, 16, &format!("Score: {}", score), Colour::White)
                     .write_string(26, 18, &format!("Lines: {}", lines), Colour::White)
+                    .write_string(26, 20, &time, Colour::White)
                     .print();
             }
         }
