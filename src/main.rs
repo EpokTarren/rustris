@@ -81,7 +81,7 @@ fn main() {
 
             last_update = now;
 
-            if now % 50 == 0 {
+            if now % conf.frame_time as u128 == 0 {
                 let ms = now % 1000;
                 let s = duration.as_secs() % 60;
                 let m = duration.as_secs() / 60;

@@ -11,6 +11,8 @@ pub struct Config {
     pub rotate_90: char,
     pub rotate_180: char,
     pub rotate_270: char,
+    pub fps: u16,
+    pub frame_time: u16,
 }
 
 impl Default for Config {
@@ -25,6 +27,8 @@ impl Default for Config {
             rotate_90: 'x',
             rotate_180: '\0',
             rotate_270: 'z',
+            fps: 20,
+            frame_time: 50,
         }
     }
 }
@@ -56,6 +60,12 @@ impl From<&str> for Config {
                             "rotate_90" => config.rotate_90 = key,
                             "rotate_180" => config.rotate_180 = key,
                             "rotate_270" => config.rotate_270 = key,
+                            "fps" => {
+                                if let Ok(fps) = value.parse() {
+                                    config.fps = fps;
+                                    config.frame_time = 1000 / fps;
+                                }
+                            }
                             _ => {}
                         }
                     }
