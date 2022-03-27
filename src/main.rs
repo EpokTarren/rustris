@@ -55,17 +55,19 @@ fn main() {
 
                 TickResult::Spin(kind, lines) => match kind {
                     piece::PieceType::T => match lines {
+                        0 => (0, 100),
                         1 => (1, 800),
                         2 => (2, 1200),
                         3 => (3, 1600),
-                        _ => unreachable!("Only spins of 1-3 lines are possible"),
+                        _ => unreachable!("Only spins of 0-3 lines are possible"),
                     },
 
                     _ => match lines {
+                        0 => (0, 0),
                         1 => (1, 100),
                         2 => (2, 300),
                         3 => (3, 500),
-                        _ => unreachable!("Only spins of 1-3 lines are possible"),
+                        _ => unreachable!("Only spins of 0-3 lines are possible"),
                     },
                 },
 
