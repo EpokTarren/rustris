@@ -93,13 +93,21 @@ impl Config {
             if let Ok(home) = std::env::var("USERPROFILE") {
                 home + r"\.rustris\"
             } else {
-                String::default()
+                if let Ok(folder) = std::env::current_dir() {
+                    folder.to_str().unwrap().to_string() + r"\"
+                } else {
+                    String::default()
+                }
             }
         } else {
             if let Ok(home) = std::env::var("HOME") {
                 home + "/.rustris/"
             } else {
-                String::default()
+                if let Ok(folder) = std::env::current_dir() {
+                    folder.to_str().unwrap().to_string() + "/"
+                } else {
+                    String::default()
+                }
             }
         }
     }
