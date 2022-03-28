@@ -7,7 +7,6 @@ use crate::{
     board::{Board, TickResult},
     config::Config,
     display::Colour,
-    input::Input,
     score::Score,
 };
 
@@ -15,7 +14,7 @@ mod bag;
 mod board;
 mod config;
 mod display;
-mod get_key;
+mod get_input;
 mod input;
 mod kicks;
 mod piece;
@@ -57,22 +56,16 @@ fn main() {
         let now = duration.as_millis();
 
         if now != last_update {
-            let mut input = Input::default();
-
-            while let Some(c) = get_key::get_key() {
-                let c = c.to_ascii_lowercase();
-
-                if c == conf.quit {
-                    break 'game_loop;
-                }
-
-                input.update(c, conf);
-            }
+            let input = if let Ok(input) = get_input::get_input(conf) {
+                input
+            } else {
+                break 'game_loop;
+            };
 
             let tick = board.tick(input, now);
 
             if tick == TickResult::GameOver {
-                break;
+                break 'game_loop;
             } else {
                 score.update(tick);
             }
