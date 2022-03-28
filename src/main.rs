@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use rand::{RngCore, SeedableRng};
 
@@ -21,6 +21,14 @@ mod kicks;
 mod piece;
 mod point;
 mod score;
+
+fn time_format(duration: Duration) -> String {
+    let ms = duration.as_millis() % 1000;
+    let s = duration.as_secs() % 60;
+    let m = duration.as_secs() / 60;
+
+    format!("Time: {:0w$}:{:0w$}.{:0w_ms$}", m, s, ms, w = 2, w_ms = 3)
+}
 
 fn main() {
     let folder = Config::folder();
@@ -72,20 +80,22 @@ fn main() {
             last_update = now;
 
             if now % conf.frame_time as u128 == 0 {
-                let ms = now % 1000;
-                let s = duration.as_secs() % 60;
-                let m = duration.as_secs() / 60;
-                let time = format!("Time: {:0w$}:{:0w$}.{:0w_ms$}", m, s, ms, w = 2, w_ms = 3);
-
                 board
                     .to_screen_buffer()
                     .write_string(26, 16, &format!("Score: {}", score.score()), Colour::White)
                     .write_string(26, 18, &format!("Lines: {}", score.lines()), Colour::White)
-                    .write_string(26, 20, &time, Colour::White)
+                    .write_string(26, 20, &time_format(duration), Colour::White)
                     .print();
             }
         }
     }
 
-    println!("Thanks for playing")
+    println!("--------------------");
+    println!(" Game Results");
+    println!("--------------------");
+    println!(" Score: {}", score.score());
+    println!(" Lines: {}", score.lines());
+    println!(" {}", time_format(start.elapsed()));
+    println!("--------------------");
+    println!(" Thanks for playing");
 }
