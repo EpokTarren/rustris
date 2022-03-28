@@ -12,20 +12,6 @@ pub enum PieceType {
     Z,
 }
 
-impl PieceType {
-    pub const fn colour(&self) -> Colour {
-        match self {
-            Self::I => Colour::Cyan,
-            Self::J => Colour::Blue,
-            Self::L => Colour::Orange,
-            Self::O => Colour::Yellow,
-            Self::S => Colour::Green,
-            Self::T => Colour::Purple,
-            Self::Z => Colour::Red,
-        }
-    }
-}
-
 pub type PieceBody = [[Colour; 4]; 4];
 
 const fn rotate(shape: PieceBody, rotations: usize) -> PieceBody {
@@ -57,13 +43,15 @@ const fn rotate(shape: PieceBody, rotations: usize) -> PieceBody {
     }
 }
 
-const I: [PieceBody; 4] = {
-    let mut blocks = [Colour::None; 16];
+use crate::display::Colour::{Blue, Cyan, Green, None, Orange, Purple, Red, Yellow};
 
-    blocks[4] = Colour::Cyan;
-    blocks[5] = Colour::Cyan;
-    blocks[6] = Colour::Cyan;
-    blocks[7] = Colour::Cyan;
+const I: [PieceBody; 4] = {
+    let mut blocks = [None; 16];
+
+    blocks[4] = Cyan;
+    blocks[5] = Cyan;
+    blocks[6] = Cyan;
+    blocks[7] = Cyan;
 
     const fn rotate_4x4(blocks: [Colour; 16], rotations: usize) -> PieceBody {
         /*
@@ -116,45 +104,45 @@ const fn rotations(shape: PieceBody) -> [PieceBody; 4] {
 }
 
 const J: [PieceBody; 4] = rotations([
-    [Colour::None, Colour::None, Colour::None, Colour::None],
-    [Colour::Blue, Colour::None, Colour::None, Colour::None],
-    [Colour::Blue, Colour::Blue, Colour::Blue, Colour::None],
-    [Colour::None, Colour::None, Colour::None, Colour::None],
+    [None, None, None, None],
+    [Blue, None, None, None],
+    [Blue, Blue, Blue, None],
+    [None, None, None, None],
 ]);
 
 const L: [PieceBody; 4] = rotations([
-    [Colour::None, Colour::None, Colour::None, Colour::None],
-    [Colour::None, Colour::None, Colour::Orange, Colour::None],
-    [Colour::Orange, Colour::Orange, Colour::Orange, Colour::None],
-    [Colour::None, Colour::None, Colour::None, Colour::None],
+    [None, None, None, None],
+    [None, None, Orange, None],
+    [Orange, Orange, Orange, None],
+    [None, None, None, None],
 ]);
 
 const O: [PieceBody; 4] = [[
-    [Colour::None, Colour::None, Colour::None, Colour::None],
-    [Colour::None, Colour::Yellow, Colour::Yellow, Colour::None],
-    [Colour::None, Colour::Yellow, Colour::Yellow, Colour::None],
-    [Colour::None, Colour::None, Colour::None, Colour::None],
+    [None, None, None, None],
+    [None, Yellow, Yellow, None],
+    [None, Yellow, Yellow, None],
+    [None, None, None, None],
 ]; 4];
 
 const S: [PieceBody; 4] = rotations([
-    [Colour::None, Colour::None, Colour::None, Colour::None],
-    [Colour::None, Colour::Green, Colour::Green, Colour::None],
-    [Colour::Green, Colour::Green, Colour::None, Colour::None],
-    [Colour::None, Colour::None, Colour::None, Colour::None],
+    [None, None, None, None],
+    [None, Green, Green, None],
+    [Green, Green, None, None],
+    [None, None, None, None],
 ]);
 
 const T: [PieceBody; 4] = rotations([
-    [Colour::None, Colour::None, Colour::None, Colour::None],
-    [Colour::None, Colour::Purple, Colour::None, Colour::None],
-    [Colour::Purple, Colour::Purple, Colour::Purple, Colour::None],
-    [Colour::None, Colour::None, Colour::None, Colour::None],
+    [None, None, None, None],
+    [None, Purple, None, None],
+    [Purple, Purple, Purple, None],
+    [None, None, None, None],
 ]);
 
 const Z: [PieceBody; 4] = rotations([
-    [Colour::None, Colour::None, Colour::None, Colour::None],
-    [Colour::Red, Colour::Red, Colour::None, Colour::None],
-    [Colour::None, Colour::Red, Colour::Red, Colour::None],
-    [Colour::None, Colour::None, Colour::None, Colour::None],
+    [None, None, None, None],
+    [Red, Red, None, None],
+    [None, Red, Red, None],
+    [None, None, None, None],
 ]);
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -182,10 +170,6 @@ impl Piece {
 
     pub const fn kind(&self) -> PieceType {
         self.kind
-    }
-
-    pub const fn colour(&self) -> Colour {
-        self.kind.colour()
     }
 
     pub const fn rotation(&self) -> u8 {
