@@ -2,8 +2,8 @@ use crate::{board::TickResult, piece::PieceType};
 
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
 pub struct Score {
-    score: u128,
-    lines: u128,
+    pub(crate) score: u64,
+    pub(crate) lines: u64,
 }
 
 impl Score {
@@ -11,11 +11,11 @@ impl Score {
         Self { score: 0, lines: 0 }
     }
 
-    pub const fn score(&self) -> u128 {
+    pub const fn score(&self) -> u64 {
         self.score
     }
 
-    pub const fn lines(&self) -> u128 {
+    pub const fn lines(&self) -> u64 {
         self.lines
     }
 

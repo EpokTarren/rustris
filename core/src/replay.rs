@@ -1,6 +1,14 @@
-use std::collections::VecDeque;
+use std::{
+    collections::VecDeque,
+    io::{BufRead, BufReader, Read},
+};
 
-use crate::input::{Input, InputDirection, InputRotation};
+use crate::{
+    input::{Input, InputDirection, InputRotation},
+    Score,
+};
+
+const VERSION: u8 = 1;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Recorder {
@@ -32,8 +40,26 @@ impl Recorder {
         }
     }
 
-    pub fn raw(self) -> Vec<u8> {
-        let mut buffer = Vec::with_capacity(32 + 3 * self.frames.len());
+    pub fn raw(self, username: &str, score: Score, duration: u64, end_time: i64) -> Vec<u8> {
+        let mut buffer = Vec::from(username.as_bytes());
+        buffer.push('\n' as u8);
+        buffer.push(VERSION);
+
+        let mut append = |num: u64| {
+            for b in num.to_be_bytes() {
+                buffer.push(b);
+            }
+        };
+
+        append(score.score());
+        append(score.lines());
+        append(duration);
+
+        for b in end_time.to_be_bytes() {
+            buffer.push(b);
+        }
+
+        buffer.reserve(32 + 3 * self.frames.len());
 
         buffer.append(&mut Vec::from(self.seed));
 
@@ -117,36 +143,109 @@ impl From<[u8; 3]> for RecorderFrame {
     }
 }
 
+#[derive(Clone, Debug)]
+pub enum ReplayError {
+    UsernameNotFound,
+    BufferTooShort,
+}
+
+impl std::fmt::Display for ReplayError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                ReplayError::UsernameNotFound => "No username in replay",
+                ReplayError::BufferTooShort => "Buffer too short, replay file likely corrupted",
+            }
+        )
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Replay {
+    username: String,
+    version: u8,
+    score: Score,
+    duration: u64,
+    time_stamp: i64,
     seed: [u8; 32],
     frames: VecDeque<Frame>,
 }
 
 impl Replay {
-    pub fn new(buffer: Vec<u8>) -> Self {
-        if buffer.len() < 35 {
-            panic!("Unable to read replay file.");
-        }
+    pub fn new(buffer: Vec<u8>) -> Result<Self, ReplayError> {
+        let mut buf = BufReader::new(buffer.as_slice());
+
+        let mut username = String::default();
+        match buf.read_line(&mut username) {
+            Ok(_) => {}
+            Err(_) => return Err(ReplayError::UsernameNotFound),
+        };
+        let username = username.trim().to_string();
+
+        let mut version = [0u8];
+        match buf.read_exact(&mut version) {
+            Ok(_) => {}
+            Err(_) => return Err(ReplayError::BufferTooShort),
+        };
+        let version = version[0];
+
+        let mut num = [0u8; 8];
+
+        match buf.read_exact(&mut num) {
+            Ok(_) => {}
+            Err(_) => return Err(ReplayError::BufferTooShort),
+        };
+        let score = u64::from_be_bytes(num);
+
+        match buf.read_exact(&mut num) {
+            Ok(_) => {}
+            Err(_) => return Err(ReplayError::BufferTooShort),
+        };
+        let lines = u64::from_be_bytes(num);
+
+        let score = Score { score, lines };
+
+        match buf.read_exact(&mut num) {
+            Ok(_) => {}
+            Err(_) => return Err(ReplayError::BufferTooShort),
+        };
+        let duration = u64::from_be_bytes(num);
+
+        match buf.read_exact(&mut num) {
+            Ok(_) => {}
+            Err(_) => return Err(ReplayError::BufferTooShort),
+        };
+        let time_stamp = i64::from_be_bytes(num);
 
         let mut seed = [0u8; 32];
-
-        for i in 0..32 {
-            seed[i] = buffer[i];
-        }
+        match buf.read_exact(&mut seed) {
+            Ok(_) => {}
+            Err(_) => return Err(ReplayError::BufferTooShort),
+        };
 
         let mut time = 0u128;
 
         let mut frames = VecDeque::with_capacity((buffer.len() - 32) / 3);
 
-        for i in (32..buffer.len()).step_by(3) {
-            let frame = RecorderFrame::from([buffer[i], buffer[i + 1], buffer[i + 2]]);
+        let mut frame_data = [0u8; 3];
+        while let Ok(_) = buf.read_exact(&mut frame_data) {
+            let frame = RecorderFrame::from(frame_data);
             time += frame.time as u128;
 
             frames.push_back(Frame::new(time, frame));
         }
 
-        Self { seed, frames }
+        Ok(Self {
+            seed,
+            score,
+            frames,
+            version,
+            username,
+            duration,
+            time_stamp,
+        })
     }
 
     pub fn seed(&self) -> [u8; 32] {
@@ -155,6 +254,22 @@ impl Replay {
 
     pub fn next(&mut self) -> Option<Frame> {
         self.frames.pop_front()
+    }
+
+    pub fn score(&self) -> Score {
+        self.score
+    }
+
+    pub fn username(&self) -> &String {
+        &self.username
+    }
+
+    pub fn duration(&self) -> u64 {
+        self.duration
+    }
+
+    pub fn time_stamp(&self) -> i64 {
+        self.time_stamp
     }
 }
 

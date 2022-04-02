@@ -106,7 +106,7 @@ fn play_game(conf: Config) -> (Score, Recorder, Duration) {
     (score, recorder, duration)
 }
 
-fn save_replay_prompt(recorder: Recorder) {
+fn save_replay_prompt(recorder: Recorder, score: Score, duration: u64) {
     let folder = Config::folder();
     let replay_folder = folder.clone() + if cfg!(windows) { r"replay\" } else { "replay/" };
 
@@ -149,7 +149,12 @@ fn save_replay_prompt(recorder: Recorder) {
                     panic!("Unable to find home directory and current directory");
                 };
 
-                if let Err(err) = std::fs::write(file_path.clone(), recorder.raw()) {
+                let end_time = Utc::now().timestamp_millis();
+
+                if let Err(err) = std::fs::write(
+                    file_path.clone(),
+                    recorder.raw(&name, score, duration, end_time),
+                ) {
                     println!(" Failed to save to: {}", file_path);
                     println!("{}", err);
                 } else {
@@ -177,7 +182,7 @@ fn re_play_game(conf: Config, filename: &str) -> (Score, Duration) {
         }
     };
 
-    let mut recording = Replay::new(buf);
+    let mut recording = Replay::new(buf).unwrap();
     let mut next_input = recording.next().unwrap();
 
     let board = Board::new(Bag::new(recording.seed()));
@@ -234,7 +239,7 @@ fn main() {
         println!("--------------------");
         print_score(score, duration);
         println!("--------------------");
-        save_replay_prompt(recorder);
+        save_replay_prompt(recorder, score, duration.as_millis() as u64);
         println!("--------------------");
         println!(" Thanks for playing");
     }
