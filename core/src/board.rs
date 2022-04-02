@@ -102,13 +102,19 @@ impl Board {
             }
             InputDirection::Left => -1,
             InputDirection::Right => 1,
+            InputDirection::SnapLeft => -10,
+            InputDirection::SnapRight => 10,
         };
 
-        let position = self.position + Point::new(delta, 0);
+        let d = i8::signum(delta);
 
-        if self.legal_position(self.piece, position) {
-            self.position = position;
-            self.last_input_rot = false;
+        for _ in 0..10 {
+            let position = self.position + Point::new(d, 0);
+
+            if self.legal_position(self.piece, position) {
+                self.position = position;
+                self.last_input_rot = false;
+            }
         }
     }
 

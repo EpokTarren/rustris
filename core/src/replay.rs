@@ -86,6 +86,8 @@ impl RecorderFrame {
 
     const LEFT: u8 = 1;
     const RIGHT: u8 = 2;
+    const SNAP_LEFT: u8 = Self::LEFT | (1 << 2);
+    const SNAP_RIGHT: u8 = Self::RIGHT | (1 << 2);
 
     const fn new(delta_time: u16, input: Input) -> Self {
         let input = if !input.quit {
@@ -102,6 +104,8 @@ impl RecorderFrame {
                     InputDirection::None => 0,
                     InputDirection::Left => Self::LEFT,
                     InputDirection::Right => Self::RIGHT,
+                    InputDirection::SnapLeft => Self::SNAP_LEFT,
+                    InputDirection::SnapRight => Self::SNAP_RIGHT,
                 }
         } else {
             std::u8::MAX
@@ -115,8 +119,8 @@ impl RecorderFrame {
 
     const fn input(&self) -> Input {
         Input {
-            quit: self.input == std::u8::MAX,
             hold: self.input & 1 << 7 != 0,
+            quit: self.input == std::u8::MAX,
             hard_drop: self.input & 1 << 6 != 0,
             soft_drop: self.input & 1 << 5 != 0,
             rotation: match self.input & (0b11 << 3) {
@@ -125,9 +129,11 @@ impl RecorderFrame {
                 Self::THREE_QUARTER => InputRotation::ThreeQuarter,
                 _ => InputRotation::None,
             },
-            direction: match self.input & 0b11 {
+            direction: match self.input & 0b111 {
                 Self::LEFT => InputDirection::Left,
                 Self::RIGHT => InputDirection::Right,
+                Self::SNAP_LEFT => InputDirection::SnapLeft,
+                Self::SNAP_RIGHT => InputDirection::SnapRight,
                 _ => InputDirection::None,
             },
         }

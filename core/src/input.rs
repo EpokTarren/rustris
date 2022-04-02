@@ -3,6 +3,8 @@ pub enum InputDirection {
     None,
     Left,
     Right,
+    SnapLeft,
+    SnapRight,
 }
 
 impl Default for InputDirection {
