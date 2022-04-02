@@ -154,7 +154,8 @@ impl From<&Board> for ScreenBuffer {
             }
         }
 
-        let (piece, position) = board.piece();
+        let piece = board.piece();
+        let position = board.position();
 
         draw_piece(
             &mut buf,

@@ -1,18 +1,32 @@
+use wasm_bindgen::prelude::wasm_bindgen;
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[wasm_bindgen]
 pub struct Point {
     x: i8,
     y: i8,
 }
 
 impl Point {
-    pub const fn new(x: i8, y: i8) -> Self {
+    pub const fn constant(x: i8, y: i8) -> Self {
         Self { x, y }
     }
-    pub const fn x(&self) -> i8 {
+}
+
+#[wasm_bindgen]
+impl Point {
+    #[wasm_bindgen]
+    pub fn new(x: i8, y: i8) -> Self {
+        Self { x, y }
+    }
+
+    #[wasm_bindgen]
+    pub fn x(&self) -> i8 {
         self.x
     }
 
-    pub const fn y(&self) -> i8 {
+    #[wasm_bindgen]
+    pub fn y(&self) -> i8 {
         self.y
     }
 }

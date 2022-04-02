@@ -1,5 +1,6 @@
 // Colours as their associated XTerm colour
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[wasm_bindgen::prelude::wasm_bindgen]
 #[repr(u8)]
 pub enum Colour {
     None = 0,

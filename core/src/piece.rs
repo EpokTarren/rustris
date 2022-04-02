@@ -1,6 +1,8 @@
 use crate::colour::Colour;
+use wasm_bindgen::prelude::wasm_bindgen;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[wasm_bindgen]
 #[repr(u8)]
 pub enum PieceType {
     I,
@@ -12,7 +14,23 @@ pub enum PieceType {
     Z,
 }
 
-pub type PieceBody = [[Colour; 4]; 4];
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[wasm_bindgen]
+pub struct PieceBody([[Colour; 4]; 4]);
+
+impl std::ops::Index<usize> for PieceBody {
+    type Output = [Colour; 4];
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.0[index]
+    }
+}
+
+// impl PieceBody {
+//     #[wasm_bindgen]
+//     pub fn get(&self, i: usize) -> [Colour; 4] {
+//         self.0[i]
+//     }
+// }
 
 const fn rotate(shape: PieceBody, rotations: usize) -> PieceBody {
     /*
@@ -30,6 +48,7 @@ const fn rotate(shape: PieceBody, rotations: usize) -> PieceBody {
      */
 
     if rotations > 0 {
+        let shape = shape.0;
         let shape = [
             [shape[0][0], shape[0][1], shape[0][2], shape[0][3]],
             [shape[3][0], shape[2][0], shape[1][0], shape[1][3]],
@@ -37,7 +56,7 @@ const fn rotate(shape: PieceBody, rotations: usize) -> PieceBody {
             [shape[3][2], shape[2][2], shape[1][2], shape[3][3]],
         ];
 
-        rotate(shape, rotations - 1)
+        rotate(PieceBody(shape), rotations - 1)
     } else {
         shape
     }
@@ -77,12 +96,12 @@ const I: [PieceBody; 4] = {
 
             rotate_4x4(blocks, rotations - 1)
         } else {
-            [
+            PieceBody([
                 [blocks[0], blocks[1], blocks[2], blocks[3]],
                 [blocks[4], blocks[5], blocks[6], blocks[7]],
                 [blocks[8], blocks[9], blocks[10], blocks[11]],
                 [blocks[12], blocks[13], blocks[14], blocks[15]],
-            ]
+            ])
         }
     }
 
@@ -94,7 +113,8 @@ const I: [PieceBody; 4] = {
     ]
 };
 
-const fn rotations(shape: PieceBody) -> [PieceBody; 4] {
+const fn rotations(shape: [[Colour; 4]; 4]) -> [PieceBody; 4] {
+    let shape = PieceBody(shape);
     [
         rotate(shape, 0),
         rotate(shape, 1),
@@ -117,12 +137,12 @@ const L: [PieceBody; 4] = rotations([
     [None, None, None, None],
 ]);
 
-const O: [PieceBody; 4] = [[
+const O: [PieceBody; 4] = [PieceBody([
     [None, None, None, None],
     [None, Yellow, Yellow, None],
     [None, Yellow, Yellow, None],
     [None, None, None, None],
-]; 4];
+]); 4];
 
 const S: [PieceBody; 4] = rotations([
     [None, None, None, None],
@@ -145,18 +165,22 @@ const Z: [PieceBody; 4] = rotations([
     [None, None, None, None],
 ]);
 
+#[wasm_bindgen]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Piece {
     kind: PieceType,
     rotation: u8,
 }
 
+#[wasm_bindgen]
 impl Piece {
-    pub const fn new(kind: PieceType) -> Self {
+    #[wasm_bindgen]
+    pub fn new(kind: PieceType) -> Self {
         Self { kind, rotation: 0 }
     }
 
-    pub const fn blocks(&self) -> PieceBody {
+    #[wasm_bindgen]
+    pub fn blocks(&self) -> PieceBody {
         (match self.kind {
             PieceType::I => I,
             PieceType::J => J,
@@ -168,15 +192,18 @@ impl Piece {
         })[(self.rotation % 4) as usize]
     }
 
-    pub const fn kind(&self) -> PieceType {
+    #[wasm_bindgen]
+    pub fn kind(&self) -> PieceType {
         self.kind
     }
 
-    pub const fn rotation(&self) -> u8 {
+    #[wasm_bindgen]
+    pub fn rotation(&self) -> u8 {
         self.rotation
     }
 
-    pub const fn rotate(&self, turns: u8) -> Self {
+    #[wasm_bindgen]
+    pub fn rotate(&self, turns: u8) -> Self {
         Self {
             kind: self.kind(),
             rotation: self.rotation.wrapping_add(turns) % 4,

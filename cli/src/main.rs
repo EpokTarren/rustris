@@ -1,6 +1,6 @@
 use crate::{config::Config, get_input::get_input};
 use chrono::{Datelike, Timelike, Utc};
-use core::{Bag, Board, Colour, Input, Recorder, Replay, Score, TickResult};
+use core::{Bag, Board, Colour, Input, Recorder, Replay, Score, TickType};
 use display::ScreenBuffer;
 use rand::{RngCore, SeedableRng};
 use std::{
@@ -56,7 +56,7 @@ fn game_loop<InputFn: FnMut(u128) -> Input, DisplayFn: FnMut(&Board, &Score, &Du
 
         let tick = board.tick(input, now);
 
-        if tick == TickResult::GameOver {
+        if tick.kind() == TickType::GameOver {
             break 'game_loop;
         } else {
             score.update(tick);
@@ -74,12 +74,12 @@ fn game_loop<InputFn: FnMut(u128) -> Input, DisplayFn: FnMut(&Board, &Score, &Du
 
 fn play_game(conf: Config) -> (Score, Recorder, Duration) {
     let seed = {
-        let mut seed: [u8; 32] = [0; 32];
+        let mut seed = [0u8; 8];
         let mut rng = rand::rngs::SmallRng::from_entropy();
 
         rng.fill_bytes(&mut seed);
 
-        seed
+        u64::from_be_bytes(seed)
     };
     let board = Board::new(Bag::new(seed));
     let mut recorder = Recorder::new(seed, 0);

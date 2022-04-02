@@ -12,13 +12,13 @@ const VERSION: u8 = 1;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Recorder {
-    seed: [u8; 32],
+    seed: u64,
     frames: Vec<RecorderFrame>,
     last_frame: u128,
 }
 
 impl Recorder {
-    pub fn new(seed: [u8; 32], now: u128) -> Self {
+    pub fn new(seed: u64, now: u128) -> Self {
         Self {
             seed,
             frames: vec![RecorderFrame::new(0, Input::default())],
@@ -54,14 +54,13 @@ impl Recorder {
         append(score.score());
         append(score.lines());
         append(duration);
+        append(self.seed);
 
         for b in end_time.to_be_bytes() {
             buffer.push(b);
         }
 
         buffer.reserve(32 + 3 * self.frames.len());
-
-        buffer.append(&mut Vec::from(self.seed));
 
         for frame in self.frames {
             buffer.push((frame.time >> 8) as u8);
@@ -175,7 +174,7 @@ pub struct Replay {
     score: Score,
     duration: u64,
     time_stamp: i64,
-    seed: [u8; 32],
+    seed: u64,
     frames: VecDeque<Frame>,
 }
 
@@ -223,13 +222,13 @@ impl Replay {
             Ok(_) => {}
             Err(_) => return Err(ReplayError::BufferTooShort),
         };
-        let time_stamp = i64::from_be_bytes(num);
+        let seed = u64::from_be_bytes(num);
 
-        let mut seed = [0u8; 32];
-        match buf.read_exact(&mut seed) {
+        match buf.read_exact(&mut num) {
             Ok(_) => {}
             Err(_) => return Err(ReplayError::BufferTooShort),
         };
+        let time_stamp = i64::from_be_bytes(num);
 
         let mut time = 0u128;
 
@@ -254,7 +253,7 @@ impl Replay {
         })
     }
 
-    pub fn seed(&self) -> [u8; 32] {
+    pub fn seed(&self) -> u64 {
         self.seed
     }
 

@@ -10,7 +10,7 @@ mod score;
 
 pub use {
     bag::Bag,
-    board::{Board, TickResult},
+    board::{Board, TickResult, TickType},
     colour::Colour,
     input::{Input, InputDirection, InputRotation},
     piece::Piece,

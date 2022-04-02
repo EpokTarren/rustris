@@ -1,4 +1,7 @@
-use crate::{board::TickResult, piece::PieceType};
+use crate::{
+    board::{TickResult, TickType},
+    piece::PieceType,
+};
 
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
 pub struct Score {
@@ -20,15 +23,18 @@ impl Score {
     }
 
     pub fn update(&mut self, tick: TickResult) {
-        let (lines, score) = match tick {
-            TickResult::None => (0, 0),
-            TickResult::One => (1, 100),
-            TickResult::Two => (2, 300),
-            TickResult::Three => (3, 500),
-            TickResult::Four => (4, 800),
+        let (lines, score) = match tick.kind() {
+            TickType::None => (0, 0),
+            TickType::Clear => match tick.lines() {
+                1 => (1, 100),
+                2 => (2, 300),
+                3 => (3, 500),
+                4 => (4, 800),
+                _ => unreachable!("Only clears of 1-4 lines are possible"),
+            },
 
-            TickResult::Spin(kind, lines) => match kind {
-                PieceType::T => match lines {
+            TickType::Spin => match tick.piece() {
+                PieceType::T => match tick.lines() {
                     0 => (0, 100),
                     1 => (1, 800),
                     2 => (2, 1200),
@@ -36,7 +42,7 @@ impl Score {
                     _ => unreachable!("Only spins of 0-3 lines are possible"),
                 },
 
-                _ => match lines {
+                _ => match tick.lines() {
                     0 => (0, 0),
                     1 => (1, 100),
                     2 => (2, 300),
@@ -45,7 +51,7 @@ impl Score {
                 },
             },
 
-            TickResult::GameOver => unreachable!("Game should terminate before this"),
+            TickType::GameOver => unreachable!("Game should terminate before this"),
         };
 
         self.score += score;

@@ -2,32 +2,36 @@ use crate::piece::PieceType;
 use rand::prelude::SliceRandom;
 use rand::rngs::SmallRng;
 use rand::SeedableRng;
+use wasm_bindgen::prelude::wasm_bindgen;
 
+#[wasm_bindgen]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Bag {
     i: usize,
     rng: SmallRng,
-    seed: [u8; 32],
+    seed: u64,
     pieces: [PieceType; 14],
 }
 
+const KINDS: [PieceType; 7] = [
+    PieceType::I,
+    PieceType::J,
+    PieceType::L,
+    PieceType::O,
+    PieceType::S,
+    PieceType::T,
+    PieceType::Z,
+];
+
+#[wasm_bindgen]
 impl Bag {
-    const KINDS: [PieceType; 7] = [
-        PieceType::I,
-        PieceType::J,
-        PieceType::L,
-        PieceType::O,
-        PieceType::S,
-        PieceType::T,
-        PieceType::Z,
-    ];
+    #[wasm_bindgen]
+    pub fn new(seed: u64) -> Self {
+        let mut rng = SmallRng::seed_from_u64(seed);
 
-    pub fn new(seed: [u8; 32]) -> Self {
-        let mut rng = SmallRng::from_seed(seed);
-
-        let mut bag1 = Self::KINDS.clone();
+        let mut bag1 = KINDS.clone();
         bag1.shuffle(&mut rng);
-        let mut bag2 = Self::KINDS.clone();
+        let mut bag2 = KINDS.clone();
         bag2.shuffle(&mut rng);
 
         Self {
@@ -41,6 +45,7 @@ impl Bag {
         }
     }
 
+    #[wasm_bindgen]
     pub fn next(&mut self) -> PieceType {
         let kind = self.pieces[self.i % 7];
 
@@ -53,7 +58,7 @@ impl Bag {
                 self.pieces[i] = self.pieces[i + 7];
             }
 
-            let mut next_bag = Self::KINDS.clone();
+            let mut next_bag = KINDS.clone();
             next_bag.shuffle(&mut self.rng);
 
             for i in 0..7 {
@@ -64,6 +69,7 @@ impl Bag {
         kind
     }
 
+    #[wasm_bindgen]
     pub fn peek(&self, i: usize) -> PieceType {
         self.pieces[(self.i + i) % 7]
     }

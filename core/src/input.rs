@@ -1,4 +1,7 @@
+use wasm_bindgen::prelude::wasm_bindgen;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[wasm_bindgen]
 pub enum InputDirection {
     None,
     Left,
@@ -14,6 +17,7 @@ impl Default for InputDirection {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[wasm_bindgen]
 pub enum InputRotation {
     None,
     Quarter,
@@ -28,6 +32,7 @@ impl Default for InputRotation {
 }
 
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
+#[wasm_bindgen]
 pub struct Input {
     pub hold: bool,
     pub quit: bool,

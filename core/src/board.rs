@@ -1,3 +1,5 @@
+use wasm_bindgen::prelude::wasm_bindgen;
+
 use crate::{
     bag::Bag,
     colour::Colour,
@@ -11,17 +13,42 @@ const BOARD_WIDTH: usize = 10;
 const BOARD_HEIGHT: usize = 45;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum TickResult {
+#[wasm_bindgen]
+pub struct TickResult {
+    kind: TickType,
+    piece: PieceType,
+    lines: u8,
+}
+
+#[wasm_bindgen]
+impl TickResult {
+    #[wasm_bindgen]
+    pub fn kind(&self) -> TickType {
+        self.kind
+    }
+
+    #[wasm_bindgen]
+    pub fn piece(&self) -> PieceType {
+        self.piece
+    }
+
+    #[wasm_bindgen]
+    pub fn lines(&self) -> u8 {
+        self.lines
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[wasm_bindgen]
+pub enum TickType {
     None,
-    One,
-    Two,
-    Three,
-    Four,
+    Clear,
+    Spin,
     GameOver,
-    Spin(PieceType, u8),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[wasm_bindgen]
 pub struct Board {
     bag: Bag,
     board: [[Colour; BOARD_WIDTH]; BOARD_HEIGHT],
@@ -36,39 +63,11 @@ pub struct Board {
 impl Board {
     pub const WIDTH: usize = BOARD_WIDTH;
     pub const HEIGHT: usize = BOARD_HEIGHT;
-
-    pub fn new(mut bag: Bag) -> Self {
-        let piece = Piece::new(bag.next());
-
-        Self {
-            bag,
-            held: None,
-            piece,
-            board: [[Colour::None; BOARD_WIDTH]; BOARD_HEIGHT],
-            contact: 0,
-            may_hold: true,
-            position: Self::START_POSITION,
-            last_input_rot: false,
-        }
-    }
+    const START_POSITION: Point = Point::constant(3, (BOARD_HEIGHT - 21) as i8);
 
     pub fn blocks(&self) -> &[[Colour; BOARD_WIDTH]; BOARD_HEIGHT] {
         &self.board
     }
-
-    pub fn piece(&self) -> (Piece, Point) {
-        (self.piece, self.position)
-    }
-
-    pub fn held(&self) -> Option<Piece> {
-        self.held
-    }
-
-    pub fn peek(&self, i: usize) -> Piece {
-        Piece::new(self.bag.peek(i))
-    }
-
-    const START_POSITION: Point = Point::new(3, (BOARD_HEIGHT - 21) as i8);
 
     fn legal_position(&self, piece: Piece, position: Point) -> bool {
         let blocks = piece.blocks();
@@ -211,10 +210,10 @@ impl Board {
 
                 PieceType::T => {
                     const T_OFFSETS: [Point; 4] = [
-                        Point::new(1, -1),
-                        Point::new(1, 1),
-                        Point::new(-1, 1),
-                        Point::new(-1, -1),
+                        Point::constant(1, -1),
+                        Point::constant(1, 1),
+                        Point::constant(-1, 1),
+                        Point::constant(-1, -1),
                     ];
 
                     let mut blocked_corners = 0;
@@ -283,21 +282,35 @@ impl Board {
 
             if spin {
                 return match cleared {
-                    0 | 1 | 2 | 3 => TickResult::Spin(piece.kind(), cleared),
+                    0 | 1 | 2 | 3 => TickResult {
+                        kind: TickType::Spin,
+                        piece: piece.kind(),
+                        lines: cleared,
+                    },
                     _ => unreachable!("It should be impossible to clear outside the range of 0-4"),
                 };
             }
 
             match cleared {
-                0 => TickResult::None,
-                1 => TickResult::One,
-                2 => TickResult::Two,
-                3 => TickResult::Three,
-                4 => TickResult::Four,
+                0 => TickResult {
+                    kind: TickType::None,
+                    piece: piece.kind(),
+                    lines: 0,
+                },
+
+                1 | 2 | 3 | 4 => TickResult {
+                    kind: TickType::Clear,
+                    piece: piece.kind(),
+                    lines: cleared,
+                },
                 _ => unreachable!("It should be impossible to clear outside the range of 0-4"),
             }
         } else {
-            TickResult::GameOver
+            TickResult {
+                kind: TickType::None,
+                piece: piece.kind(),
+                lines: 0,
+            }
         }
     }
 
@@ -340,10 +353,15 @@ impl Board {
             self.soft_drop();
         }
 
-        TickResult::None
+        TickResult {
+            kind: TickType::None,
+            piece: self.piece.kind(),
+            lines: 0,
+        }
     }
 
-    pub fn tick(&mut self, input: Input, tick: u128) -> TickResult {
+    #[inline(always)]
+    fn tick_inner(&mut self, input: Input, tick: u128) -> TickResult {
         if tick % 500 == 0 {
             self.soft_drop();
         }
@@ -361,5 +379,59 @@ impl Board {
         }
 
         self.input(input)
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn tick(&mut self, input: Input, tick: u128) -> TickResult {
+        self.tick_inner(input, tick)
+    }
+}
+
+#[wasm_bindgen]
+impl Board {
+    #[wasm_bindgen]
+    pub fn new(mut bag: Bag) -> Self {
+        let piece = Piece::new(bag.next());
+
+        Self {
+            bag,
+            held: None,
+            piece,
+            board: [[Colour::None; BOARD_WIDTH]; BOARD_HEIGHT],
+            contact: 0,
+            may_hold: true,
+            position: Self::START_POSITION,
+            last_input_rot: false,
+        }
+    }
+
+    #[wasm_bindgen]
+    pub fn get(&self, x: usize, y: usize) -> Colour {
+        self.board[y][x]
+    }
+
+    #[wasm_bindgen]
+    pub fn piece(&self) -> Piece {
+        self.piece
+    }
+
+    pub fn position(&self) -> Point {
+        self.position
+    }
+
+    #[wasm_bindgen]
+    pub fn held(&self) -> Option<Piece> {
+        self.held
+    }
+
+    #[wasm_bindgen]
+    pub fn peek(&self, i: usize) -> Piece {
+        Piece::new(self.bag.peek(i))
+    }
+
+    #[wasm_bindgen]
+    #[cfg(target_arch = "wasm32")]
+    pub fn tick(&mut self, input: Input, tick: u64) -> TickResult {
+        self.tick_inner(input, tick as u128)
     }
 }
