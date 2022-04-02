@@ -107,7 +107,7 @@ impl Board {
 
         let d = i8::signum(delta);
 
-        for _ in 0..10 {
+        for _ in 0..delta.abs() {
             let position = self.position + Point::new(d, 0);
 
             if self.legal_position(self.piece, position) {
