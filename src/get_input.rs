@@ -15,18 +15,13 @@ fn get_key() -> Option<char> {
     }
 }
 
-pub fn get_input(conf: Config) -> Result<Input, ()> {
+pub fn get_input(conf: Config) -> Input {
     let mut input = Input::default();
 
     while let Some(c) = get_key() {
         let c = c.to_ascii_lowercase();
-
-        if c == conf.quit {
-            return Err(());
-        }
-
         input.update(c, conf);
     }
 
-    Ok(input)
+    input
 }

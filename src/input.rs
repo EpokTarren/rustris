@@ -30,6 +30,7 @@ impl Default for InputRotation {
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
 pub struct Input {
     pub hold: bool,
+    pub quit: bool,
     pub hard_drop: bool,
     pub soft_drop: bool,
     pub rotation: InputRotation,
@@ -42,6 +43,8 @@ impl Input {
             self.direction = InputDirection::Left;
         } else if c == conf.right {
             self.direction = InputDirection::Right;
+        } else if c == conf.quit {
+            self.quit = true;
         } else if c == conf.hold {
             self.hold = true;
         } else if c == conf.rotate_90 {

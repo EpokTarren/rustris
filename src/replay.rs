@@ -62,20 +62,24 @@ impl RecorderFrame {
     const RIGHT: u8 = 2;
 
     const fn new(delta_time: u16, input: Input) -> Self {
-        let input = (input.hold as u8) << 7
-            | (input.hard_drop as u8) << 6
-            | (input.soft_drop as u8) << 5
-            | match input.rotation {
-                InputRotation::None => 0,
-                InputRotation::Quarter => Self::QUARTER,
-                InputRotation::TwoQuarter => Self::TWO_QUARTER,
-                InputRotation::ThreeQuarter => Self::THREE_QUARTER,
-            }
-            | match input.direction {
-                InputDirection::None => 0,
-                InputDirection::Left => Self::LEFT,
-                InputDirection::Right => Self::RIGHT,
-            };
+        let input = if !input.quit {
+            (input.hold as u8) << 7
+                | (input.hard_drop as u8) << 6
+                | (input.soft_drop as u8) << 5
+                | match input.rotation {
+                    InputRotation::None => 0,
+                    InputRotation::Quarter => Self::QUARTER,
+                    InputRotation::TwoQuarter => Self::TWO_QUARTER,
+                    InputRotation::ThreeQuarter => Self::THREE_QUARTER,
+                }
+                | match input.direction {
+                    InputDirection::None => 0,
+                    InputDirection::Left => Self::LEFT,
+                    InputDirection::Right => Self::RIGHT,
+                }
+        } else {
+            std::u8::MAX
+        };
 
         Self {
             time: delta_time,
@@ -85,6 +89,7 @@ impl RecorderFrame {
 
     const fn input(&self) -> Input {
         Input {
+            quit: self.input == std::u8::MAX,
             hold: self.input & 1 << 7 != 0,
             hard_drop: self.input & 1 << 6 != 0,
             soft_drop: self.input & 1 << 5 != 0,
