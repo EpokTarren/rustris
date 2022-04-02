@@ -1,6 +1,6 @@
 use crate::{
     bag::Bag,
-    display::{Colour, ScreenBuffer, ScreenCell},
+    colour::Colour,
     input::{Input, InputDirection, InputRotation},
     kicks::{I_KICKS, KICKS},
     piece::{Piece, PieceType},
@@ -34,6 +34,9 @@ pub struct Board {
 }
 
 impl Board {
+    pub const WIDTH: usize = BOARD_WIDTH;
+    pub const HEIGHT: usize = BOARD_HEIGHT;
+
     pub fn new(mut bag: Bag) -> Self {
         let piece = Piece::new(bag.next());
 
@@ -47,6 +50,22 @@ impl Board {
             position: Self::START_POSITION,
             last_input_rot: false,
         }
+    }
+
+    pub fn blocks(&self) -> &[[Colour; BOARD_WIDTH]; BOARD_HEIGHT] {
+        &self.board
+    }
+
+    pub fn piece(&self) -> (Piece, Point) {
+        (self.piece, self.position)
+    }
+
+    pub fn held(&self) -> Option<Piece> {
+        self.held
+    }
+
+    pub fn peek(&self, i: usize) -> Piece {
+        Piece::new(self.bag.peek(i))
     }
 
     const START_POSITION: Point = Point::new(3, (BOARD_HEIGHT - 21) as i8);
@@ -336,103 +355,5 @@ impl Board {
         }
 
         self.input(input)
-    }
-
-    pub fn to_screen_buffer(&self) -> ScreenBuffer {
-        let mut buf = ScreenBuffer::default();
-
-        fn draw_piece(buf: &mut ScreenBuffer, piece: Piece, offset_x: i8, offset_y: i8) {
-            let blocks = piece.blocks();
-
-            for y in 0..4 {
-                for x in 0..4 {
-                    let c = blocks[y][x];
-
-                    if c != Colour::None {
-                        let x = x as i8 + offset_x;
-                        let y = y as i8 + offset_y;
-
-                        buf.write(x as usize, y as usize, ScreenCell::new('@', c));
-                    }
-                }
-            }
-        }
-
-        const HOLD_LEFT: usize = 2;
-        const HOLD_TOP: usize = 3;
-
-        buf.write_string(HOLD_LEFT, HOLD_TOP - 1, "Hold", Colour::White);
-
-        for y in HOLD_TOP..=(HOLD_TOP + 5) {
-            buf.write(HOLD_LEFT, y, ScreenCell::new('#', Colour::Grey));
-            buf.write(HOLD_LEFT + 7, y, ScreenCell::new('#', Colour::Grey));
-        }
-
-        if let Some(piece) = self.held {
-            draw_piece(&mut buf, piece, (HOLD_TOP + 1) as i8, (HOLD_LEFT + 2) as i8);
-        }
-
-        const HOLD_BOTTOM: &str = "######";
-
-        buf.write_string(HOLD_LEFT + 1, HOLD_TOP, HOLD_BOTTOM, Colour::Grey);
-        buf.write_string(HOLD_LEFT + 1, HOLD_TOP + 5, HOLD_BOTTOM, Colour::Grey);
-
-        const PLAY_FIELD_BOTTOM: &str = "##########";
-        const PLAY_FIELD_LEFT: usize = HOLD_LEFT + 7 + 3;
-
-        for y in 2..23 {
-            buf.write(PLAY_FIELD_LEFT - 1, y, ScreenCell::new('#', Colour::Grey));
-            buf.write(
-                PLAY_FIELD_LEFT + BOARD_WIDTH,
-                y,
-                ScreenCell::new('#', Colour::Grey),
-            );
-        }
-
-        buf.write_string(PLAY_FIELD_LEFT, 22, PLAY_FIELD_BOTTOM, Colour::Grey);
-
-        for y in 0..BOARD_HEIGHT {
-            for x in 0..BOARD_WIDTH {
-                let colour = self.board[y][x];
-                let y = y.wrapping_sub(23);
-
-                if y < BOARD_HEIGHT && colour != Colour::None {
-                    buf.write(x + PLAY_FIELD_LEFT, y, ScreenCell::new('@', colour));
-                }
-            }
-        }
-
-        draw_piece(
-            &mut buf,
-            self.piece,
-            self.position.x() + PLAY_FIELD_LEFT as i8,
-            self.position.y().wrapping_sub(23),
-        );
-
-        const NEXT_LEFT: usize = PLAY_FIELD_LEFT + BOARD_WIDTH + 4;
-        const NEXT_TOP: usize = 3;
-
-        buf.write_string(NEXT_LEFT, NEXT_TOP - 1, "Next", Colour::White);
-
-        for y in NEXT_TOP..=(NEXT_TOP + 11) {
-            buf.write(NEXT_LEFT, y, ScreenCell::new('#', Colour::Grey));
-            buf.write(NEXT_LEFT + 7, y, ScreenCell::new('#', Colour::Grey));
-        }
-
-        for i in 0..3 {
-            draw_piece(
-                &mut buf,
-                Piece::new(self.bag.peek(i)),
-                (NEXT_LEFT + 2) as i8,
-                (NEXT_TOP + 1 + i * 3) as i8,
-            );
-        }
-
-        const NEXT_BOTTOM: &str = "######";
-
-        buf.write_string(NEXT_LEFT + 1, NEXT_TOP, NEXT_BOTTOM, Colour::Grey);
-        buf.write_string(NEXT_LEFT + 1, NEXT_TOP + 11, NEXT_BOTTOM, Colour::Grey);
-
-        buf
     }
 }

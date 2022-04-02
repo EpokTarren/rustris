@@ -1,33 +1,17 @@
+use crate::{config::Config, get_input::get_input};
 use chrono::{Datelike, Timelike, Utc};
-use input::Input;
+use core::{Bag, Board, Colour, Input, Recorder, Replay, Score, TickResult};
+use display::ScreenBuffer;
 use rand::{RngCore, SeedableRng};
-use replay::Replay;
 use std::{
     io::{BufRead, Write},
     path::Path,
     time::{Duration, Instant},
 };
 
-use crate::{
-    bag::Bag,
-    board::{Board, TickResult},
-    config::Config,
-    display::Colour,
-    replay::Recorder,
-    score::Score,
-};
-
-mod bag;
-mod board;
 mod config;
 mod display;
 mod get_input;
-mod input;
-mod kicks;
-mod piece;
-mod point;
-mod replay;
-mod score;
 
 fn time_format(duration: Duration) -> String {
     let ms = duration.as_millis() % 1000;
@@ -103,15 +87,14 @@ fn play_game(conf: Config) -> (Score, Recorder, Duration) {
     display::clear_terminal();
 
     let mut input = |now| {
-        let input = get_input::get_input(conf);
+        let input = get_input(conf);
         recorder.record(input, now);
 
         input
     };
 
     let mut display = |board: &Board, score: &Score, duration: &Duration| {
-        board
-            .to_screen_buffer()
+        ScreenBuffer::from(board)
             .write_string(26, 16, &format!("Score: {}", score.score()), Colour::White)
             .write_string(26, 18, &format!("Lines: {}", score.lines()), Colour::White)
             .write_string(26, 20, &time_format(*duration), Colour::White)
@@ -178,7 +161,7 @@ fn save_replay_prompt(recorder: Recorder) {
         }
     }
 
-    println!("Replay discarded");
+    println!(" Replay discarded");
 }
 
 fn re_play_game(conf: Config, filename: &str) -> (Score, Duration) {
@@ -202,7 +185,7 @@ fn re_play_game(conf: Config, filename: &str) -> (Score, Duration) {
     display::clear_terminal();
 
     let mut input = move |now| {
-        if get_input::get_input(conf).quit {
+        if get_input(conf).quit {
             println!("--------------------");
             println!("Cancelling replay playback");
         }
@@ -223,8 +206,7 @@ fn re_play_game(conf: Config, filename: &str) -> (Score, Duration) {
     };
 
     let mut display = |board: &Board, score: &Score, duration: &Duration| {
-        board
-            .to_screen_buffer()
+        ScreenBuffer::from(board)
             .write_string(26, 16, &format!("Score: {}", score.score()), Colour::White)
             .write_string(26, 18, &format!("Lines: {}", score.lines()), Colour::White)
             .write_string(26, 20, &time_format(*duration), Colour::White)

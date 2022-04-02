@@ -1,4 +1,4 @@
-use crate::display::Colour;
+use crate::colour::Colour;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(u8)]
@@ -43,7 +43,7 @@ const fn rotate(shape: PieceBody, rotations: usize) -> PieceBody {
     }
 }
 
-use crate::display::Colour::{Blue, Cyan, Green, None, Orange, Purple, Red, Yellow};
+use crate::colour::Colour::{Blue, Cyan, Green, None, Orange, Purple, Red, Yellow};
 
 const I: [PieceBody; 4] = {
     let mut blocks = [None; 16];
