@@ -45,8 +45,50 @@ fn print_score(score: Score, duration: Duration) {
     println!(" {}", time_format(duration));
 }
 
-fn play_game(conf: Config) -> (Score, Recorder, Duration) {
+fn game_loop<InputFn: FnMut(u128) -> Input, DisplayFn: FnMut(&Board, &Score, &Duration)>(
+    input: &mut InputFn,
+    display: &mut DisplayFn,
+    frame_time: u128,
+    mut board: Board,
+) -> (Score, Duration) {
     let start = Instant::now();
+
+    let mut score = Score::new();
+    let mut last_update: u128 = 0;
+
+    'game_loop: loop {
+        let duration = start.elapsed();
+        let now = duration.as_millis();
+
+        if now == last_update {
+            continue;
+        }
+
+        let input = input(now);
+
+        if input.quit {
+            break 'game_loop;
+        }
+
+        let tick = board.tick(input, now);
+
+        if tick == TickResult::GameOver {
+            break 'game_loop;
+        } else {
+            score.update(tick);
+        }
+
+        last_update = now;
+
+        if now % frame_time as u128 == 0 {
+            display(&board, &score, &duration);
+        }
+    }
+
+    (score, start.elapsed())
+}
+
+fn play_game(conf: Config) -> (Score, Recorder, Duration) {
     let seed = {
         let mut seed: [u8; 32] = [0; 32];
         let mut rng = rand::rngs::SmallRng::from_entropy();
@@ -55,48 +97,30 @@ fn play_game(conf: Config) -> (Score, Recorder, Duration) {
 
         seed
     };
-
-    let mut score = Score::new();
-    let mut last_update: u128 = 0;
-    let mut board = Board::new(Bag::new(seed));
-    let mut recorder = Recorder::new(seed, start.elapsed().as_millis());
+    let board = Board::new(Bag::new(seed));
+    let mut recorder = Recorder::new(seed, 0);
 
     display::clear_terminal();
 
-    'game_loop: loop {
-        let duration = start.elapsed();
-        let now = duration.as_millis();
+    let mut input = |now| {
+        let input = get_input::get_input(conf);
+        recorder.record(input, now);
 
-        if now != last_update {
-            let input = if let Ok(input) = get_input::get_input(conf) {
-                input
-            } else {
-                break 'game_loop;
-            };
+        input
+    };
 
-            let tick = board.tick(input, now);
-            recorder.record(input, now);
+    let mut display = |board: &Board, score: &Score, duration: &Duration| {
+        board
+            .to_screen_buffer()
+            .write_string(26, 16, &format!("Score: {}", score.score()), Colour::White)
+            .write_string(26, 18, &format!("Lines: {}", score.lines()), Colour::White)
+            .write_string(26, 20, &time_format(*duration), Colour::White)
+            .print();
+    };
 
-            if tick == TickResult::GameOver {
-                break 'game_loop;
-            } else {
-                score.update(tick);
-            }
+    let (score, duration) = game_loop(&mut input, &mut display, conf.frame_time.into(), board);
 
-            last_update = now;
-
-            if now % conf.frame_time as u128 == 0 {
-                board
-                    .to_screen_buffer()
-                    .write_string(26, 16, &format!("Score: {}", score.score()), Colour::White)
-                    .write_string(26, 18, &format!("Lines: {}", score.lines()), Colour::White)
-                    .write_string(26, 20, &time_format(duration), Colour::White)
-                    .print();
-            }
-        }
-    }
-
-    (score, recorder, start.elapsed())
+    (score, recorder, duration)
 }
 
 fn save_replay_prompt(recorder: Recorder) {
@@ -157,7 +181,7 @@ fn save_replay_prompt(recorder: Recorder) {
     println!("Replay discarded");
 }
 
-fn re_play_game(conf: Config, filename: &str) -> Result<(Score, Duration), ()> {
+fn re_play_game(conf: Config, filename: &str) -> (Score, Duration) {
     let folder = Config::folder();
     let replay_folder = folder.clone() + if cfg!(windows) { r"replay\" } else { "replay/" };
     let path = format!("{}{}", replay_folder, filename);
@@ -166,71 +190,49 @@ fn re_play_game(conf: Config, filename: &str) -> Result<(Score, Duration), ()> {
         Ok(contents) => contents,
         Err(err) => {
             print!("Unable to read replay file at \"{}\"", path);
-            print!("{}", err);
-            return Err(());
+            panic!("{}", err);
         }
     };
 
     let mut recording = Replay::new(buf);
-
-    let start = Instant::now();
-    let seed = recording.seed();
-
-    let mut score = Score::new();
-    let mut board = Board::new(Bag::new(seed));
-    let mut last_update: u128 = 0;
     let mut next_input = recording.next().unwrap();
+
+    let board = Board::new(Bag::new(recording.seed()));
 
     display::clear_terminal();
 
-    'game_loop: loop {
-        let duration = start.elapsed();
-        let now = duration.as_millis();
+    let mut input = move |now| {
+        if get_input::get_input(conf).quit {
+            println!("--------------------");
+            println!("Cancelling replay playback");
+        }
 
-        if now != last_update {
-            if let Err(()) = get_input::get_input(conf) {
-                println!("--------------------");
-                println!("Cancelling replay playback");
-                println!("--------------------");
+        let input = if now >= next_input.time {
+            next_input.input
+        } else {
+            Input::default()
+        };
 
-                return Err(());
-            }
-
-            let input = if now >= next_input.time {
-                next_input.input
-            } else {
-                Input::default()
-            };
-
-            let tick = board.tick(input, now);
-
-            if tick == TickResult::GameOver {
-                break 'game_loop;
-            } else {
-                score.update(tick);
-            }
-
-            if now % conf.frame_time as u128 == 0 {
-                board
-                    .to_screen_buffer()
-                    .write_string(26, 16, &format!("Score: {}", score.score()), Colour::White)
-                    .write_string(26, 18, &format!("Lines: {}", score.lines()), Colour::White)
-                    .write_string(26, 20, &time_format(duration), Colour::White)
-                    .write_string(26, 22, &format!("Replay: {}", filename), Colour::Grey)
-                    .print();
-            }
-
-            last_update = now;
-
-            if now >= next_input.time {
-                if let Some(next) = recording.next() {
-                    next_input = next;
-                }
+        if now >= next_input.time {
+            if let Some(next) = recording.next() {
+                next_input = next;
             }
         }
-    }
 
-    Ok((score, start.elapsed()))
+        input
+    };
+
+    let mut display = |board: &Board, score: &Score, duration: &Duration| {
+        board
+            .to_screen_buffer()
+            .write_string(26, 16, &format!("Score: {}", score.score()), Colour::White)
+            .write_string(26, 18, &format!("Lines: {}", score.lines()), Colour::White)
+            .write_string(26, 20, &time_format(*duration), Colour::White)
+            .write_string(26, 22, &format!("Replay: {}", filename), Colour::Grey)
+            .print();
+    };
+
+    game_loop(&mut input, &mut display, conf.frame_time.into(), board)
 }
 
 fn main() {
@@ -239,11 +241,11 @@ fn main() {
     let conf = Config::from_file(&conf_file);
 
     if let Some(filename) = std::env::args().nth(1) {
-        if let Ok((score, duration)) = re_play_game(conf, &filename) {
-            println!("--------------------");
-            print_score(score, duration);
-            println!("--------------------");
-        }
+        let (score, duration) = re_play_game(conf, &filename);
+
+        println!("--------------------");
+        print_score(score, duration);
+        println!("--------------------");
     } else {
         let (score, recorder, duration) = play_game(conf);
 
