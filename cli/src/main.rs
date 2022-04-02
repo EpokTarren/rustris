@@ -190,9 +190,11 @@ fn re_play_game(conf: Config, filename: &str) -> (Score, Duration) {
     display::clear_terminal();
 
     let mut input = move |now| {
-        if get_input(conf).quit {
+        let input = get_input(conf);
+        if input.quit {
             println!("--------------------");
             println!("Cancelling replay playback");
+            return input;
         }
 
         let input = if now >= next_input.time {
