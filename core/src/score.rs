@@ -1,24 +1,28 @@
+use wasm_bindgen::prelude::wasm_bindgen;
+
 use crate::{
     board::{TickResult, TickType},
     piece::PieceType,
 };
 
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
+#[wasm_bindgen]
 pub struct Score {
     pub(crate) score: u64,
     pub(crate) lines: u64,
 }
 
+#[wasm_bindgen]
 impl Score {
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
         Self { score: 0, lines: 0 }
     }
 
-    pub const fn score(&self) -> u64 {
+    pub fn score(&self) -> u64 {
         self.score
     }
 
-    pub const fn lines(&self) -> u64 {
+    pub fn lines(&self) -> u64 {
         self.lines
     }
 

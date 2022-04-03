@@ -25,12 +25,12 @@ impl std::ops::Index<usize> for PieceBody {
     }
 }
 
-// impl PieceBody {
-//     #[wasm_bindgen]
-//     pub fn get(&self, i: usize) -> [Colour; 4] {
-//         self.0[i]
-//     }
-// }
+#[wasm_bindgen]
+impl PieceBody {
+    pub fn block(&self, x: usize, y: usize) -> Colour {
+        self.0[y][x]
+    }
+}
 
 const fn rotate(shape: PieceBody, rotations: usize) -> PieceBody {
     /*
@@ -174,12 +174,10 @@ pub struct Piece {
 
 #[wasm_bindgen]
 impl Piece {
-    #[wasm_bindgen]
     pub fn new(kind: PieceType) -> Self {
         Self { kind, rotation: 0 }
     }
 
-    #[wasm_bindgen]
     pub fn blocks(&self) -> PieceBody {
         (match self.kind {
             PieceType::I => I,
@@ -192,17 +190,14 @@ impl Piece {
         })[(self.rotation % 4) as usize]
     }
 
-    #[wasm_bindgen]
     pub fn kind(&self) -> PieceType {
         self.kind
     }
 
-    #[wasm_bindgen]
     pub fn rotation(&self) -> u8 {
         self.rotation
     }
 
-    #[wasm_bindgen]
     pub fn rotate(&self, turns: u8) -> Self {
         Self {
             kind: self.kind(),

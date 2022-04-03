@@ -3,6 +3,8 @@ use std::{
     io::{BufRead, BufReader, Read},
 };
 
+use wasm_bindgen::prelude::wasm_bindgen;
+
 use crate::{
     input::{Input, InputDirection, InputRotation},
     Score,
@@ -11,6 +13,7 @@ use crate::{
 const VERSION: u8 = 1;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[wasm_bindgen]
 pub struct Recorder {
     seed: u64,
     frames: Vec<RecorderFrame>,
@@ -18,7 +21,7 @@ pub struct Recorder {
 }
 
 impl Recorder {
-    pub fn new(seed: u64, now: u128) -> Self {
+    fn new_(seed: u64, now: u128) -> Self {
         Self {
             seed,
             frames: vec![RecorderFrame::new(0, Input::default())],
@@ -26,7 +29,7 @@ impl Recorder {
         }
     }
 
-    pub fn record(&mut self, input: Input, now: u128) {
+    fn record_(&mut self, input: Input, now: u128) {
         const MAX_TIME: u128 = std::u16::MAX as u128;
 
         let elapsed = now - self.last_frame;
@@ -39,7 +42,10 @@ impl Recorder {
             self.last_frame = now;
         }
     }
+}
 
+#[wasm_bindgen]
+impl Recorder {
     pub fn raw(self, username: &str, score: Score, duration: u64, end_time: i64) -> Vec<u8> {
         let mut buffer = Vec::from(username.as_bytes());
         buffer.push('\n' as u8);
@@ -69,6 +75,29 @@ impl Recorder {
         }
 
         buffer
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl Recorder {
+    pub fn new(seed: u64, now: u128) -> Self {
+        Self::new_(seed, now)
+    }
+
+    pub fn record(&mut self, input: Input, now: u128) {
+        self.record_(input, now)
+    }
+}
+
+#[wasm_bindgen]
+#[cfg(target_arch = "wasm32")]
+impl Recorder {
+    pub fn new(seed: u64, now: u64) -> Self {
+        Self::new_(seed, now as u128)
+    }
+
+    pub fn record(&mut self, input: Input, now: u64) {
+        self.record_(input, now as u128)
     }
 }
 

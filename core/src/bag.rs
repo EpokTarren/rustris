@@ -25,7 +25,6 @@ const KINDS: [PieceType; 7] = [
 
 #[wasm_bindgen]
 impl Bag {
-    #[wasm_bindgen]
     pub fn new(seed: u64) -> Self {
         let mut rng = SmallRng::seed_from_u64(seed);
 
@@ -45,7 +44,6 @@ impl Bag {
         }
     }
 
-    #[wasm_bindgen]
     pub fn next(&mut self) -> PieceType {
         let kind = self.pieces[self.i % 7];
 
@@ -69,7 +67,6 @@ impl Bag {
         kind
     }
 
-    #[wasm_bindgen]
     pub fn peek(&self, i: usize) -> PieceType {
         self.pieces[(self.i + i) % 7]
     }

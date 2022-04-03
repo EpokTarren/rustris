@@ -22,17 +22,14 @@ pub struct TickResult {
 
 #[wasm_bindgen]
 impl TickResult {
-    #[wasm_bindgen]
     pub fn kind(&self) -> TickType {
         self.kind
     }
 
-    #[wasm_bindgen]
     pub fn piece(&self) -> PieceType {
         self.piece
     }
 
-    #[wasm_bindgen]
     pub fn lines(&self) -> u8 {
         self.lines
     }
@@ -307,7 +304,7 @@ impl Board {
             }
         } else {
             TickResult {
-                kind: TickType::None,
+                kind: TickType::GameOver,
                 piece: piece.kind(),
                 lines: 0,
             }
@@ -389,7 +386,6 @@ impl Board {
 
 #[wasm_bindgen]
 impl Board {
-    #[wasm_bindgen]
     pub fn new(mut bag: Bag) -> Self {
         let piece = Piece::new(bag.next());
 
@@ -405,12 +401,10 @@ impl Board {
         }
     }
 
-    #[wasm_bindgen]
-    pub fn get(&self, x: usize, y: usize) -> Colour {
+    pub fn block(&self, x: usize, y: usize) -> Colour {
         self.board[y][x]
     }
 
-    #[wasm_bindgen]
     pub fn piece(&self) -> Piece {
         self.piece
     }
@@ -419,19 +413,26 @@ impl Board {
         self.position
     }
 
-    #[wasm_bindgen]
     pub fn held(&self) -> Option<Piece> {
         self.held
     }
 
-    #[wasm_bindgen]
     pub fn peek(&self, i: usize) -> Piece {
         Piece::new(self.bag.peek(i))
     }
 
-    #[wasm_bindgen]
     #[cfg(target_arch = "wasm32")]
     pub fn tick(&mut self, input: Input, tick: u64) -> TickResult {
         self.tick_inner(input, tick as u128)
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    pub fn height() -> usize {
+        Self::HEIGHT
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    pub fn width() -> usize {
+        Self::WIDTH
     }
 }

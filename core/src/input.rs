@@ -41,3 +41,24 @@ pub struct Input {
     pub rotation: InputRotation,
     pub direction: InputDirection,
 }
+
+#[wasm_bindgen]
+impl Input {
+    pub fn new(
+        hold: bool,
+        quit: bool,
+        hard_drop: bool,
+        soft_drop: bool,
+        rotation: InputRotation,
+        direction: InputDirection,
+    ) -> Self {
+        Self {
+            hold,
+            quit,
+            hard_drop,
+            soft_drop,
+            rotation,
+            direction,
+        }
+    }
+}
