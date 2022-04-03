@@ -1,6 +1,6 @@
 use crate::{config::Config, get_input::get_input};
 use chrono::{Datelike, Timelike, Utc};
-use core::{Bag, Board, Colour, Input, Recorder, Replay, Score, TickType};
+use core::{Bag, Board, Colour, Game, GameType, Input, Recorder, Replay, Score, TickType};
 use display::ScreenBuffer;
 use rand::{RngCore, SeedableRng};
 use std::{
@@ -33,11 +33,10 @@ fn game_loop<InputFn: FnMut(u128) -> Input, DisplayFn: FnMut(&Board, &Score, &Du
     input: &mut InputFn,
     display: &mut DisplayFn,
     frame_time: u128,
-    mut board: Board,
+    mut game: Game,
 ) -> (Score, Duration) {
     let start = Instant::now();
 
-    let mut score = Score::new();
     let mut last_update: u128 = 0;
 
     'game_loop: loop {
@@ -48,28 +47,20 @@ fn game_loop<InputFn: FnMut(u128) -> Input, DisplayFn: FnMut(&Board, &Score, &Du
             continue;
         }
 
-        let input = input(now);
-
-        if input.quit {
-            break 'game_loop;
-        }
-
-        let tick = board.tick(input, now);
+        let tick = game.tick(input(now), now);
 
         if tick.kind() == TickType::GameOver {
             break 'game_loop;
-        } else {
-            score.update(tick);
         }
 
         last_update = now;
 
         if now % frame_time as u128 == 0 {
-            display(&board, &score, &duration);
+            display(game.board(), &game.score(), &duration);
         }
     }
 
-    (score, start.elapsed())
+    (game.score(), start.elapsed())
 }
 
 fn play_game(conf: Config) -> (Score, Recorder, Duration) {
@@ -81,8 +72,9 @@ fn play_game(conf: Config) -> (Score, Recorder, Duration) {
 
         u64::from_be_bytes(seed)
     };
-    let board = Board::new(Bag::new(seed));
-    let mut recorder = Recorder::new(seed, 0);
+    let game_type = GameType::new_lines(40);
+    let game = Game::new(Bag::new(seed), game_type);
+    let mut recorder = Recorder::new(seed, 0, &game);
 
     display::clear_terminal();
 
@@ -101,7 +93,7 @@ fn play_game(conf: Config) -> (Score, Recorder, Duration) {
             .print();
     };
 
-    let (score, duration) = game_loop(&mut input, &mut display, conf.frame_time.into(), board);
+    let (score, duration) = game_loop(&mut input, &mut display, conf.frame_time.into(), game);
 
     (score, recorder, duration)
 }
@@ -185,7 +177,7 @@ fn re_play_game(conf: Config, filename: &str) -> (Score, Duration) {
     let mut recording = Replay::new(buf).unwrap();
     let mut next_input = recording.next().unwrap();
 
-    let board = Board::new(Bag::new(recording.seed()));
+    let game = Game::new(Bag::new(recording.seed()), recording.kind());
 
     display::clear_terminal();
 
@@ -193,7 +185,7 @@ fn re_play_game(conf: Config, filename: &str) -> (Score, Duration) {
         let input = get_input(conf);
         if input.quit {
             println!("--------------------");
-            println!("Cancelling replay playback");
+            println!(" Cancelling replay playback");
             return input;
         }
 
@@ -221,7 +213,7 @@ fn re_play_game(conf: Config, filename: &str) -> (Score, Duration) {
             .print();
     };
 
-    game_loop(&mut input, &mut display, conf.frame_time.into(), board)
+    game_loop(&mut input, &mut display, conf.frame_time.into(), game)
 }
 
 fn main() {

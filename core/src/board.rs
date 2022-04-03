@@ -20,6 +20,12 @@ pub struct TickResult {
     lines: u8,
 }
 
+impl TickResult {
+    pub(crate) fn new(kind: TickType, piece: PieceType, lines: u8) -> Self {
+        Self { kind, piece, lines }
+    }
+}
+
 #[wasm_bindgen]
 impl TickResult {
     pub fn kind(&self) -> TickType {
@@ -335,6 +341,14 @@ impl Board {
     }
 
     fn input(&mut self, input: Input) -> TickResult {
+        if input.quit {
+            return TickResult {
+                kind: TickType::GameOver,
+                piece: self.piece.kind(),
+                lines: 0,
+            };
+        }
+
         self.move_piece(input.direction);
         self.rotate_piece(input.rotation);
 

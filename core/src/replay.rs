@@ -7,7 +7,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::{
     input::{Input, InputDirection, InputRotation},
-    Score,
+    Game, GameMode, GameType, Score,
 };
 
 const VERSION: u8 = 1;
@@ -16,20 +16,22 @@ const VERSION: u8 = 1;
 #[wasm_bindgen]
 pub struct Recorder {
     seed: u64,
+    kind: GameType,
     frames: Vec<RecorderFrame>,
     last_frame: u128,
 }
 
 impl Recorder {
-    fn new_(seed: u64, now: u128) -> Self {
+    fn create(seed: u64, game: &Game, now: u128) -> Self {
         Self {
             seed,
+            kind: game.kind(),
             frames: vec![RecorderFrame::new(0, Input::default())],
             last_frame: now,
         }
     }
 
-    fn record_(&mut self, input: Input, now: u128) {
+    fn record_input(&mut self, input: Input, now: u128) {
         const MAX_TIME: u128 = std::u16::MAX as u128;
 
         let elapsed = now - self.last_frame;
@@ -50,6 +52,7 @@ impl Recorder {
         let mut buffer = Vec::from(username.as_bytes());
         buffer.push('\n' as u8);
         buffer.push(VERSION);
+        buffer.push(self.kind.mode() as u8);
 
         let mut append = |num: u64| {
             for b in num.to_be_bytes() {
@@ -57,6 +60,7 @@ impl Recorder {
             }
         };
 
+        append(self.kind.lines());
         append(score.score());
         append(score.lines());
         append(duration);
@@ -80,24 +84,24 @@ impl Recorder {
 
 #[cfg(not(target_arch = "wasm32"))]
 impl Recorder {
-    pub fn new(seed: u64, now: u128) -> Self {
-        Self::new_(seed, now)
+    pub fn new(seed: u64, now: u128, game: &Game) -> Self {
+        Self::create(seed, game, now)
     }
 
     pub fn record(&mut self, input: Input, now: u128) {
-        self.record_(input, now)
+        self.record_input(input, now)
     }
 }
 
 #[wasm_bindgen]
 #[cfg(target_arch = "wasm32")]
 impl Recorder {
-    pub fn new(seed: u64, now: u64) -> Self {
-        Self::new_(seed, now as u128)
+    pub fn new(seed: u64, now: u64, game: &Game) -> Self {
+        Self::create(seed, game, now as u128)
     }
 
     pub fn record(&mut self, input: Input, now: u64) {
-        self.record_(input, now as u128)
+        self.record_input(input, now as u128)
     }
 }
 
@@ -204,6 +208,7 @@ pub struct Replay {
     duration: u64,
     time_stamp: i64,
     seed: u64,
+    kind: GameType,
     frames: VecDeque<Frame>,
 }
 
@@ -225,7 +230,24 @@ impl Replay {
         };
         let version = version[0];
 
+        let mut mode = [0u8];
+        let mode = match buf.read_exact(&mut mode) {
+            Ok(_) => match GameMode::new(mode[0]) {
+                Ok(mode) => mode,
+                Err(_) => return Err(ReplayError::BufferTooShort),
+            },
+            Err(_) => return Err(ReplayError::BufferTooShort),
+        };
+
         let mut num = [0u8; 8];
+
+        match buf.read_exact(&mut num) {
+            Ok(_) => {}
+            Err(_) => return Err(ReplayError::BufferTooShort),
+        };
+        let count = u64::from_be_bytes(num);
+
+        let kind = GameType::new(mode, count);
 
         match buf.read_exact(&mut num) {
             Ok(_) => {}
@@ -273,6 +295,7 @@ impl Replay {
 
         Ok(Self {
             seed,
+            kind,
             score,
             frames,
             version,
@@ -304,6 +327,10 @@ impl Replay {
 
     pub fn time_stamp(&self) -> i64 {
         self.time_stamp
+    }
+
+    pub fn kind(&self) -> GameType {
+        self.kind
     }
 }
 
