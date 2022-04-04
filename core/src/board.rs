@@ -435,6 +435,24 @@ impl Board {
             last_input_rot: false,
         }
     }
+
+    pub fn from_position(
+        board: [[Colour; BOARD_WIDTH]; BOARD_HEIGHT],
+        bag: Bag,
+        piece: Piece,
+        held: Option<Piece>,
+    ) -> Self {
+        Self {
+            bag,
+            held,
+            piece,
+            board,
+            contact: 0,
+            may_hold: true,
+            position: Self::START_POSITION,
+            last_input_rot: false,
+        }
+    }
 }
 
 #[wasm_bindgen]
@@ -456,6 +474,10 @@ impl Board {
 
     pub fn from_string(board: String, bag: Bag) -> Self {
         Self::from_strs(board.lines().collect::<Vec<&str>>().as_slice(), bag)
+    }
+
+    pub fn bag(&self) -> Bag {
+        self.bag.clone()
     }
 
     pub fn block(&self, x: usize, y: usize) -> Colour {
