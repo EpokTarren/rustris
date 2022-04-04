@@ -141,6 +141,14 @@ impl Game {
         }
     }
 
+    pub fn from_board(board: Board, kind: GameType) -> Self {
+        Self {
+            board,
+            score: Score::new(),
+            kind,
+        }
+    }
+
     pub fn block(&self, x: usize, y: usize) -> Colour {
         self.board.block(x, y)
     }

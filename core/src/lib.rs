@@ -8,6 +8,7 @@ mod piece;
 mod point;
 mod replay;
 mod score;
+mod tests;
 
 pub use {
     bag::Bag,

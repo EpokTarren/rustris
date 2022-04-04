@@ -396,6 +396,45 @@ impl Board {
     pub fn tick(&mut self, input: Input, tick: u128) -> TickResult {
         self.tick_inner(input, tick)
     }
+
+    pub fn from_strs(rows: &[&str], mut bag: Bag) -> Self {
+        let piece = Piece::new(bag.next());
+
+        let mut board = [[Colour::None; BOARD_WIDTH]; BOARD_HEIGHT];
+
+        if rows.len() >= BOARD_HEIGHT {
+            panic!("Provided board is too tall");
+        }
+
+        let offset = BOARD_HEIGHT - rows.len();
+
+        for (y, row) in rows.iter().enumerate() {
+            if row.len() != BOARD_WIDTH {
+                panic!(
+                    "Provided row is of wrong length, expected {} got {}",
+                    BOARD_WIDTH,
+                    row.len()
+                );
+            }
+
+            for (x, c) in row.chars().enumerate() {
+                if c != ' ' {
+                    board[y + offset][x] = Colour::Grey;
+                }
+            }
+        }
+
+        Self {
+            bag,
+            held: None,
+            piece,
+            board,
+            contact: 0,
+            may_hold: true,
+            position: Self::START_POSITION,
+            last_input_rot: false,
+        }
+    }
 }
 
 #[wasm_bindgen]
@@ -413,6 +452,10 @@ impl Board {
             position: Self::START_POSITION,
             last_input_rot: false,
         }
+    }
+
+    pub fn from_string(board: String, bag: Bag) -> Self {
+        Self::from_strs(board.lines().collect::<Vec<&str>>().as_slice(), bag)
     }
 
     pub fn block(&self, x: usize, y: usize) -> Colour {
@@ -448,5 +491,16 @@ impl Board {
     #[cfg(target_arch = "wasm32")]
     pub fn width() -> usize {
         Self::WIDTH
+    }
+}
+
+// These are debug functions intended to make setting up a board easier
+#[allow(dead_code)]
+impl Board {
+    pub(crate) fn from_strs_with_piece(rows: &[&str], bag: Bag, piece: Piece) -> Self {
+        let mut board = Self::from_strs(rows, bag);
+        board.piece = piece;
+
+        board
     }
 }
