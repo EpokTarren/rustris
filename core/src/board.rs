@@ -120,29 +120,32 @@ impl Board {
         }
     }
 
+    fn rotate_180(&mut self) {
+        use crate::kicks::KICKS_180;
+
+        let piece = self.piece.rotate(2);
+
+        for kick in KICKS_180[self.piece.rotation() as usize] {
+            let position = self.position + kick;
+
+            if self.legal_position(piece, position) {
+                self.position = position;
+                self.piece = piece;
+                self.last_input_rot = true;
+                return;
+            }
+        }
+    }
+
     fn rotate_piece(&mut self, direction: InputRotation) {
-        let delta: u8 = match direction {
-            InputRotation::None => {
-                return;
-            }
-            InputRotation::TwoQuarter => {
-                return;
-            }
-            InputRotation::Quarter => 0,
-            InputRotation::ThreeQuarter => 1,
+        let (delta, rotation) = match direction {
+            InputRotation::None => return,
+            InputRotation::TwoQuarter => return self.rotate_180(),
+            InputRotation::Quarter => (0, 1),
+            InputRotation::ThreeQuarter => (1, 3),
         };
 
-        let piece = self.piece.rotate(match direction {
-            InputRotation::None => 0,
-            InputRotation::Quarter => 1,
-            InputRotation::TwoQuarter => 2,
-            InputRotation::ThreeQuarter => 3,
-        });
-
-        self.last_input_rot = true;
-
-        let delta = delta as usize;
-
+        let piece = self.piece.rotate(rotation);
         let mut process_kick = |table: [[[Point; 5]; 2]; 4]| {
             for kick in table[self.piece.rotation() as usize][delta] {
                 let position = self.position + kick;
@@ -150,6 +153,7 @@ impl Board {
                 if self.legal_position(piece, position) {
                     self.position = position;
                     self.piece = piece;
+                    self.last_input_rot = true;
                     return;
                 }
             }
