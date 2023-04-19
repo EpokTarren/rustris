@@ -134,24 +134,3 @@ pub fn spin_test(mut board: Board, expected: Board, inputs: &str) {
 
     assert!(res);
 }
-
-pub fn reverse_board(board: Board) -> Board {
-    fn reverse(
-        mut board: [[Colour; Board::WIDTH]; Board::HEIGHT],
-    ) -> [[Colour; Board::WIDTH]; Board::HEIGHT] {
-        for (y, row) in board.clone().iter().enumerate() {
-            for (x, square) in row.iter().rev().enumerate() {
-                board[y][x] = *square;
-            }
-        }
-
-        board
-    }
-
-    Board::from_position(
-        reverse(*board.blocks()),
-        board.bag(),
-        board.piece(),
-        board.held(),
-    )
-}

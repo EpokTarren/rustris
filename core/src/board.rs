@@ -72,6 +72,18 @@ impl Board {
         &self.board
     }
 
+    pub fn mirror(&self) -> Self {
+        let mut board = self.clone();
+
+        for (i, line) in board.board.iter_mut().enumerate() {
+            for (j, block) in line.iter_mut().rev().enumerate() {
+                *block = self.board[i][j];
+            }
+        }
+
+        board
+    }
+
     fn legal_position(&self, piece: Piece, position: Point) -> bool {
         let blocks = piece.blocks();
 
