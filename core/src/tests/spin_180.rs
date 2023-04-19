@@ -81,7 +81,6 @@ tester!(
     "# ###     ",
     " ####     ",
     "#####     ",
-
 );
 
 tester!(
@@ -93,5 +92,61 @@ tester!(
     "# ###     ",
     " ####     ",
     "#####     ",
+);
 
+tester!(
+    off_the_ceiling, PieceType::T, "hRSLhH",
+    "#######   ",
+    "          ",
+    "          "
+    ;
+    "#######   ",
+    " #        ",
+    "###       "
+);
+
+tester!(
+    unhook_left_south_north, PieceType::T, "hLSRhH",
+    "   #######",
+    "         #",
+    "        ##",
+    ;
+    "   #######",
+    "      #  #",
+    "     #####",
+);
+
+tester!(
+    unhook_right_south_north, PieceType::T, "hRSLhH",
+    "#######   ",
+    "#         ",
+    "##        ",
+    ;
+    "#######   ",
+    "#  #      ",
+    "#####     ",
+);
+
+tester!(
+    // First spin is to get the right orientation
+    left_zipper_south_north, PieceType::T, "hhH", (2, Board::HEIGHT as i8 - 3),
+    "# ###     ",
+    "    #     ",
+    "## ##     ",
+    ;
+    "#####     ",
+    "### #     ",
+    "## ##     ",
+);
+
+tester!(
+    // First spin is to get the right orientation
+    right_zipper_south_north, PieceType::T, "hhH", (2, Board::HEIGHT as i8 - 3),
+    "### #     ",
+    "#         ",
+    "## ##     ",
+    ;
+    "#####     ",
+    "# ###     ",
+    "## ##     ",
 );
