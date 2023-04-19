@@ -87,6 +87,13 @@ const CLOCKWISE: Input = {
     }
 };
 
+const HALF_TURN: Input = {
+    Input {
+        rotation: InputRotation::TwoQuarter,
+        ..NONE
+    }
+};
+
 /*
  * l - left
  * r - right
@@ -94,6 +101,7 @@ const CLOCKWISE: Input = {
  * R - right instant
  * c - clockwise rotation
  * C - counter clockwise rotation
+ * h - half turn
  * s - soft drop
  * S - soft drop to bottom
  * H - hard drop
@@ -108,6 +116,7 @@ pub fn spin_test(mut board: Board, expected: Board, inputs: &str) {
             'R' => RIGHT_SNAP,
             'c' => CLOCKWISE,
             'C' => COUNTER_CLOCKWISE,
+            'h' => HALF_TURN,
             's' => SOFT,
             'S' => {
                 for i in tick..(tick + 30) {
@@ -124,7 +133,13 @@ pub fn spin_test(mut board: Board, expected: Board, inputs: &str) {
         tick += 1;
     }
 
-    let res = board.blocks() == expected.blocks();
+    let res = expected
+        .blocks()
+        .iter()
+        .flatten()
+        .zip(board.blocks().iter().flatten())
+        .all(|(&a, &b)| (a == Colour::None) == (b == Colour::None));
+
     if !res {
         println!("Found");
         print_board(&board);
@@ -134,3 +149,28 @@ pub fn spin_test(mut board: Board, expected: Board, inputs: &str) {
 
     assert!(res);
 }
+
+macro_rules! tester {
+    ($name: ident, $pieceType: expr, $inputs: literal, $(($x: expr, $y: expr),)? $($initial: literal),*$(,)? ; $($expected: literal),* $(,)?) => {
+        #[test]
+        fn $name() {
+            #[allow(unused_mut)]
+            let mut board = Board::from_strs_with_piece(
+                &[$($initial),*],
+                Bag::new(0),
+                Piece::new($pieceType),
+            );
+
+            $( board.set_position(Point::constant($x, $y)); )?
+
+            let expected = Board::from_strs(
+                &[$($expected),*],
+                Bag::new(0),
+            );
+
+            spin_test(board, expected, $inputs);
+        }
+    };
+}
+
+pub(crate) use tester;

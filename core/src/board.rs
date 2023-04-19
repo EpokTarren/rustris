@@ -84,6 +84,10 @@ impl Board {
         board
     }
 
+    pub fn set_position(&mut self, position: Point) {
+        self.position = position;
+    }
+
     fn legal_position(&self, piece: Piece, position: Point) -> bool {
         let blocks = piece.blocks();
 
