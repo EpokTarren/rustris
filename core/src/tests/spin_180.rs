@@ -44,14 +44,14 @@ fn no_kick() {
 }
 
 tester!(
-    off_the_floor, PieceType::T, "ShH",
+    off_the_floor, Piece::T, "ShH",
     ;
     "   ###    ",
     "    #     ",
 );
 
 tester!(
-    unhook_right_north_south, PieceType::T, "SLhH",
+    unhook_right_north_south, Piece::T, "SLhH",
     "##        ",
     "#         ",
     "######### ",
@@ -62,7 +62,7 @@ tester!(
 );
 
 tester!(
-    unhook_left_north_south, PieceType::T, "SRhH",
+    unhook_left_north_south, Piece::T, "SRhH",
     "        ##",
     "         #",
     " #########",
@@ -73,7 +73,7 @@ tester!(
 );
 
 tester!(
-    right_zipper_north_south, PieceType::T, "hH", (0, Board::HEIGHT as i8 - 4),
+    right_zipper_north_south, Piece::T, "hH", (0, Board::HEIGHT as i8 - 4),
     "# ###     ",
     "    #     ",
     "## ##     ",
@@ -84,7 +84,7 @@ tester!(
 );
 
 tester!(
-    left_zipper_north_south, PieceType::T, "hH", (0, Board::HEIGHT as i8 - 4),
+    left_zipper_north_south, Piece::T, "hH", (0, Board::HEIGHT as i8 - 4),
     "# ###     ",
     "    #     ",
     "## ##     ",
@@ -95,7 +95,7 @@ tester!(
 );
 
 tester!(
-    off_the_ceiling, PieceType::T, "hRSLhH",
+    off_the_ceiling, Piece::T, "hRSLhH",
     "#######   ",
     "          ",
     "          "
@@ -106,7 +106,7 @@ tester!(
 );
 
 tester!(
-    unhook_left_south_north, PieceType::T, "hLSRhH",
+    unhook_left_south_north, Piece::T, "hLSRhH",
     "   #######",
     "         #",
     "        ##",
@@ -117,7 +117,7 @@ tester!(
 );
 
 tester!(
-    unhook_right_south_north, PieceType::T, "hRSLhH",
+    unhook_right_south_north, Piece::T, "hRSLhH",
     "#######   ",
     "#         ",
     "##        ",
@@ -128,8 +128,7 @@ tester!(
 );
 
 tester!(
-    // First spin is to get the right orientation
-    left_zipper_south_north, PieceType::T, "hhH", (2, Board::HEIGHT as i8 - 3),
+    left_zipper_south_north, Piece::T.rotate(2), "hH", (1, Board::HEIGHT as i8 - 4),
     "# ###     ",
     "    #     ",
     "## ##     ",
@@ -140,8 +139,7 @@ tester!(
 );
 
 tester!(
-    // First spin is to get the right orientation
-    right_zipper_south_north, PieceType::T, "hhH", (2, Board::HEIGHT as i8 - 3),
+    right_zipper_south_north, Piece::T.rotate(2), "hH", (1, Board::HEIGHT as i8 - 4),
     "### #     ",
     "#         ",
     "## ##     ",

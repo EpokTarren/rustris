@@ -172,6 +172,19 @@ pub struct Piece {
     rotation: u8,
 }
 
+macro_rules! constant {
+    ($($name: ident),*) => {
+        impl Piece {
+            $(pub const $name: Self = Self {
+                kind: PieceType::$name,
+                rotation: 0,
+            };)*
+        }
+    };
+}
+
+constant!(I, J, L, O, S, T, Z);
+
 #[wasm_bindgen]
 impl Piece {
     pub fn new(kind: PieceType) -> Self {

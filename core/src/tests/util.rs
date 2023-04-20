@@ -151,14 +151,14 @@ pub fn spin_test(mut board: Board, expected: Board, inputs: &str) {
 }
 
 macro_rules! tester {
-    ($name: ident, $pieceType: expr, $inputs: literal, $(($x: expr, $y: expr),)? $($initial: literal),*$(,)? ; $($expected: literal),* $(,)?) => {
+    ($name: ident, $piece: expr, $inputs: literal, $(($x: expr, $y: expr),)? $($initial: literal),*$(,)? ; $($expected: literal),* $(,)?) => {
         #[test]
         fn $name() {
             #[allow(unused_mut)]
             let mut board = Board::from_strs_with_piece(
                 &[$($initial),*],
                 Bag::new(0),
-                Piece::new($pieceType),
+                $piece,
             );
 
             $( board.set_position(Point::constant($x, $y)); )?
