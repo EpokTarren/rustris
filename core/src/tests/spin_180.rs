@@ -148,3 +148,165 @@ tester!(
     "# ###     ",
     "## ##     ",
 );
+
+tester!(
+    off_the_wall_left, Piece::T, "cLrShH",
+    "#         ",
+    "#         ",
+    "#         ",
+    "####      ",
+    ;
+    "# T       ",
+    "#TT       ",
+    "# T       ",
+    "####      ",
+);
+
+tester!(
+    off_the_wall_right, Piece::T, "CLSRhH",
+    "   #      ",
+    "   #      ",
+    "   #      ",
+    "####      ",
+    ;
+    " T #      ",
+    " TT#      ",
+    " T #      ",
+    "####      ",
+);
+
+tester!(
+    tall_jump_left_wall, Piece::T, "cLrShrH",
+    "#         ",
+    "#         ",
+    "#         ",
+    "#  #      ",
+    "# ##      ",
+    "####      ",
+    ;
+    "#  T      ",
+    "# TT      ",
+    "#  T      ",
+    "#  #      ",
+    "# ##      ",
+    "####      ",
+);
+
+tester!(
+    tall_jump_right_wall, Piece::T, "CLrShlH",
+    "   #      ",
+    "   #      ",
+    "   #      ",
+    "#  #      ",
+    "## #      ",
+    "####      ",
+    ;
+    "T  #      ",
+    "TT #      ",
+    "T  #      ",
+    "#  #      ",
+    "## #      ",
+    "####      ",
+);
+
+tester!(
+    constricted_jump_left_wall, Piece::T, "rSLclhH",
+    "####      ",
+    "#         ",
+    "#         ",
+    "#  #######",
+    "# ##     #",
+    "####     #",
+    ;
+    "####      ",
+    "# T       ",
+    "#TT       ",
+    "# T#######",
+    "# ##     #",
+    "####     #",
+);
+
+tester!(
+    constricted_jump_right_wall, Piece::T, "SRCrhH",
+    "      ####",
+    "         #",
+    "         #",
+    "#######  #",
+    "#     ## #",
+    "#     ####",
+    ;
+    "      ####",
+    "       T #",
+    "       TT#",
+    "#######T #",
+    "#     ## #",
+    "#     ####",
+);
+
+tester!(
+    tall_zipper_east_west, Piece::T.rotate(1), "hH", (0, Board::HEIGHT as i8 - 5),
+    "  #       ",
+    "  #       ",
+    "# #       ",
+    "#         ",
+    "# #       ",
+    "###       ",
+    ;
+    " T#       ",
+    "TT#       ",
+    "#T#       ",
+    "#         ",
+    "# #       ",
+    "###       ",
+);
+
+tester!(
+    tall_zipper_west_east, Piece::T.rotate(3), "hH", (0, Board::HEIGHT as i8 - 5),
+    "#         ",
+    "#         ",
+    "# #       ",
+    "  #       ",
+    "# #       ",
+    "###       ",
+    ;
+    "#T        ",
+    "#TT       ",
+    "#T#       ",
+    "  #       ",
+    "# #       ",
+    "###       ",
+);
+
+tester!(
+    constricted_zipper_east_west, Piece::T.rotate(1), "hH", (0, Board::HEIGHT as i8 - 5),
+    "###       ",
+    "  #       ",
+    "  #       ",
+    "#         ",
+    "# #       ",
+    "###       ",
+    ;
+    "###       ",
+    " T#       ",
+    "TT#       ",
+    "#T        ",
+    "# #       ",
+    "###       ",
+);
+
+tester!(
+    constricted_zipper_west_east, Piece::T.rotate(3), "hH", (0, Board::HEIGHT as i8 - 5),
+    "###       ",
+    "#         ",
+    "#         ",
+    "  #       ",
+    "# #       ",
+    "###       ",
+    ;
+    "###       ",
+    "#T        ",
+    "#TT       ",
+    " T#       ",
+    "# #       ",
+    "###       ",
+);

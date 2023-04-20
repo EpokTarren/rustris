@@ -185,9 +185,9 @@ pub const KICKS_180: [[Point; 6]; 4] = [
     ],
     [
         Point::constant(0, 0),
-        Point::constant(1, 0),
-        Point::constant(1, -2),
-        Point::constant(1, -1),
+        Point::constant(-1, 0),
+        Point::constant(-1, -2),
+        Point::constant(-1, -1),
         Point::constant(0, -2),
         Point::constant(0, -1),
     ],
